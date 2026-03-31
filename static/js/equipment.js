@@ -17,8 +17,27 @@ async function loadEquipment(page = 1) {
     const location = document.getElementById('filter-location')?.value || '';
     const status = document.getElementById('filter-status')?.value || '';
 
+    // Advanced filters
+    const indicator = document.getElementById('filter-indicator')?.value || '';
+    const procurement_title = document.getElementById('filter-procurement-title')?.value || '';
+    const supplier = document.getElementById('filter-supplier')?.value || '';
+    const brand = document.getElementById('filter-brand')?.value || '';
+    const model = document.getElementById('filter-model')?.value || '';
+    const property_number = document.getElementById('filter-property-number')?.value || '';
+    const serial_number = document.getElementById('filter-serial-number')?.value || '';
+    const person_accountable = document.getElementById('filter-person-accountable')?.value || '';
+    const used_by = document.getElementById('filter-used-by')?.value || '';
+    const position = document.getElementById('filter-position')?.value || '';
+    const acquisition_date = document.getElementById('filter-acquisition-date')?.value || '';
+    const inventory_date = document.getElementById('filter-inventory-date')?.value || '';
+    const cost = document.getElementById('filter-cost')?.value || '';
+    const description = document.getElementById('filter-description')?.value || '';
+
     const params = new URLSearchParams({
-        page, per_page: 25, search, type, location, status
+        page, per_page: 25, search, type, location, status,
+        indicator, procurement_title, supplier, brand, model,
+        property_number, serial_number, person_accountable, used_by,
+        position, acquisition_date, inventory_date, cost, description
     });
 
     try {
@@ -163,8 +182,21 @@ async function loadFilterOptions() {
         const res = await api('/api/filters');
         const data = await res.json();
 
-        populateSelect('filter-type', data.types, 'All Types');
-        populateSelect('filter-location', data.locations, 'All Locations');
+        populateDatalist('list-types', data.types);
+        populateDatalist('list-locations', data.locations);
+        
+        // Advanced filters
+        populateDatalist('list-indicators', data.indicators);
+        populateDatalist('list-titles', data.procurement_titles);
+        populateDatalist('list-suppliers', data.suppliers);
+        populateDatalist('list-brands', data.brands);
+        populateDatalist('list-models', data.models);
+        populateDatalist('list-prop-nos', data.property_numbers);
+        populateDatalist('list-serial-nos', data.serial_numbers);
+        populateDatalist('list-persons', data.person_accountables);
+        populateDatalist('list-users', data.used_bys);
+        populateDatalist('list-positions', data.positions);
+
         populateSelect('report-filter-type', data.types, 'All Types');
         populateSelect('report-filter-location', data.locations, 'All Locations');
     } catch (err) {
@@ -172,13 +204,29 @@ async function loadFilterOptions() {
     }
 }
 
-function populateSelect(id, options, defaultLabel) {
+function populateSelect(id, options, defaultText) {
     const select = document.getElementById(id);
     if (!select) return;
     const currentVal = select.value;
-    select.innerHTML = `<option value="">${defaultLabel}</option>`;
+    select.innerHTML = `<option value="">${defaultText}</option>`;
     options.forEach(opt => {
-        select.innerHTML += `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`;
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        select.appendChild(option);
+    });
+    select.value = currentVal;
+}
+
+function populateDatalist(id, options) {
+    const list = document.getElementById(id);
+    if (!list) return;
+    list.innerHTML = '';
+    options.forEach(opt => {
+        if (!opt) return;
+        const option = document.createElement('option');
+        option.value = opt;
+        list.appendChild(option);
     });
 }
 
@@ -783,8 +831,31 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTimeout = setTimeout(() => loadEquipment(1), 350);
     });
 
-    // Filters
-    document.getElementById('filter-type')?.addEventListener('change', () => loadEquipment(1));
-    document.getElementById('filter-location')?.addEventListener('change', () => loadEquipment(1));
-    document.getElementById('filter-status')?.addEventListener('change', () => loadEquipment(1));
+    // Filters (use 'input' for real-time search with datalists)
+    document.getElementById('filter-type')?.addEventListener('input', () => loadEquipment(1));
+    document.getElementById('filter-location')?.addEventListener('input', () => loadEquipment(1));
+    document.getElementById('filter-status')?.addEventListener('input', () => loadEquipment(1));
+    document.getElementById('equipment-search')?.addEventListener('input', () => loadEquipment(1));
+
+    // Advanced Filters Toggle
+    const btnToggle = document.getElementById('btn-toggle-filters');
+    const panelFilters = document.getElementById('advanced-filters-panel');
+    btnToggle?.addEventListener('click', () => {
+        panelFilters.classList.toggle('active');
+        btnToggle.classList.toggle('active');
+    });
+
+    // Apply Advanced Filters
+    document.getElementById('btn-apply-filters')?.addEventListener('click', () => {
+        loadEquipment(1);
+        panelFilters.classList.remove('active');
+        btnToggle.classList.remove('active');
+    });
+
+    // Reset Filters
+    document.getElementById('btn-reset-filters')?.addEventListener('click', () => {
+        const inputs = panelFilters.querySelectorAll('select, input');
+        inputs.forEach(input => input.value = '');
+        loadEquipment(1);
+    });
 });

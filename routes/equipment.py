@@ -82,12 +82,31 @@ def list_equipment():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
     search = request.args.get('search', '').strip()
+    
+    # Basic filters
     filter_type = request.args.get('type', '').strip()
     filter_location = request.args.get('location', '').strip()
     filter_status = request.args.get('status', '').strip()
 
+    # Advanced filters
+    f_indicator = request.args.get('indicator', '').strip()
+    f_procurement_title = request.args.get('procurement_title', '').strip()
+    f_supplier = request.args.get('supplier', '').strip()
+    f_brand = request.args.get('brand', '').strip()
+    f_model = request.args.get('model', '').strip()
+    f_property_number = request.args.get('property_number', '').strip()
+    f_serial_number = request.args.get('serial_number', '').strip()
+    f_person_accountable = request.args.get('person_accountable', '').strip()
+    f_used_by = request.args.get('used_by', '').strip()
+    f_position = request.args.get('position', '').strip()
+    f_acquisition_date = request.args.get('acquisition_date', '').strip()
+    f_inventory_date = request.args.get('inventory_date', '').strip()
+    f_cost = request.args.get('cost', '').strip()
+    f_description = request.args.get('description', '').strip()
+
     query = Equipment.query
 
+    # Search (multi-field partial match)
     if search:
         search_term = f'%{search}%'
         query = query.filter(
@@ -104,12 +123,58 @@ def list_equipment():
             )
         )
 
+    # Core filters
     if filter_type:
-        query = query.filter_by(type_of_equipment=filter_type)
+        query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
     if filter_location:
-        query = query.filter_by(location=filter_location)
+        query = query.filter(Equipment.location.ilike(f'%{filter_location}%'))
     if filter_status:
-        query = query.filter_by(status=filter_status)
+        query = query.filter(Equipment.status.ilike(f'%{filter_status}%'))
+
+    # Advanced filters (partial matching for all searchable fields)
+    if f_indicator:
+        query = query.filter(Equipment.indicator.ilike(f'%{f_indicator}%'))
+    if f_procurement_title:
+        query = query.filter(Equipment.procurement_title.ilike(f'%{f_procurement_title}%'))
+    if f_supplier:
+        query = query.filter(Equipment.supplier.ilike(f'%{f_supplier}%'))
+    if f_brand:
+        query = query.filter(Equipment.brand.ilike(f'%{f_brand}%'))
+    if f_model:
+        query = query.filter(Equipment.model.ilike(f'%{f_model}%'))
+    if f_property_number:
+        query = query.filter(Equipment.property_number.ilike(f'%{f_property_number}%'))
+    if f_serial_number:
+        query = query.filter(Equipment.serial_number.ilike(f'%{f_serial_number}%'))
+    if f_person_accountable:
+        query = query.filter(Equipment.person_accountable.ilike(f'%{f_person_accountable}%'))
+    if f_used_by:
+        query = query.filter(Equipment.used_by.ilike(f'%{f_used_by}%'))
+    
+    if f_position:
+        query = query.filter(db.or_(
+            Equipment.person_accountable_position.ilike(f'%{f_position}%'),
+            Equipment.used_by_position.ilike(f'%{f_position}%')
+        ))
+
+    if f_acquisition_date:
+        p_date = parse_date(f_acquisition_date)
+        if p_date:
+            query = query.filter(Equipment.acquisition_date == p_date)
+    
+    if f_inventory_date:
+        p_date = parse_date(f_inventory_date)
+        if p_date:
+            query = query.filter(Equipment.inventory_date == p_date)
+
+    if f_cost:
+        try:
+            query = query.filter(Equipment.cost == float(f_cost))
+        except ValueError:
+            pass
+
+    if f_description:
+        query = query.filter(Equipment.description.ilike(f'%{f_description}%'))
 
     query = query.order_by(Equipment.id.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -407,9 +472,29 @@ def import_excel():
 @equipment_bp.route('/api/filters')
 @login_required
 def get_filters():
-    types = db.session.query(Equipment.type_of_equipment).distinct().all()
-    locations = db.session.query(Equipment.location).distinct().all()
+    def get_distinct(column):
+        vals = db.session.query(column).distinct().all()
+        return sorted([v[0] for v in vals if v[0]])
+
+    # Positions from both fields
+    p_positions = db.session.query(Equipment.person_accountable_position).distinct().all()
+    u_positions = db.session.query(Equipment.used_by_position).distinct().all()
+    all_positions = sorted(list(set(
+        [p[0] for p in p_positions if p[0]] + [u[0] for u in u_positions if u[0]]
+    )))
+
     return jsonify({
-        'types': sorted([t[0] for t in types if t[0]]),
-        'locations': sorted([l[0] for l in locations if l[0]])
+        'types': get_distinct(Equipment.type_of_equipment),
+        'locations': get_distinct(Equipment.location),
+        'indicators': get_distinct(Equipment.indicator),
+        'procurement_titles': get_distinct(Equipment.procurement_title),
+        'suppliers': get_distinct(Equipment.supplier),
+        'brands': get_distinct(Equipment.brand),
+        'models': get_distinct(Equipment.model),
+        'property_numbers': get_distinct(Equipment.property_number),
+        'serial_numbers': get_distinct(Equipment.serial_number),
+        'person_accountables': get_distinct(Equipment.person_accountable),
+        'used_bys': get_distinct(Equipment.used_by),
+        'positions': all_positions
     })
+

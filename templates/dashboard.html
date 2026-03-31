@@ -134,19 +134,24 @@
                     <div class="toolbar-left">
                         <div class="search-box">
                             <span class="search-icon">🔍</span>
-                            <input type="text" id="equipment-search" placeholder="Search equipment...">
+                            <input type="text" id="equipment-search" class="form-input" placeholder="Quick search...">
                         </div>
-                        <select class="filter-select" id="filter-type">
-                            <option value="">All Types</option>
-                        </select>
-                        <select class="filter-select" id="filter-location">
-                            <option value="">All Locations</option>
-                        </select>
-                        <select class="filter-select" id="filter-status">
-                            <option value="">All Status</option>
+                        <input type="text" class="filter-select" id="filter-type" list="list-types" placeholder="All Types">
+                        <datalist id="list-types"></datalist>
+
+                        <input type="text" class="filter-select" id="filter-location" list="list-locations" placeholder="All Locations">
+                        <datalist id="list-locations"></datalist>
+
+                        <input type="text" class="filter-select" id="filter-status" list="list-statuses" placeholder="All Status">
+                        <datalist id="list-statuses">
                             <option value="serviceable">Serviceable</option>
                             <option value="unserviceable">Unserviceable</option>
-                        </select>
+                        </datalist>
+
+                        <button class="btn-filter-toggle" id="btn-toggle-filters">
+                            <span>🧪</span>
+                            <span>Advanced Filters</span>
+                        </button>
                     </div>
                     <div class="toolbar-right">
                         <button class="btn btn-outline btn-sm" id="btn-import-excel">
@@ -155,6 +160,82 @@
                         <button class="btn btn-primary btn-sm" id="btn-add-new">
                             ➕ Add New
                         </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters Panel -->
+                <div class="advanced-filters-panel" id="advanced-filters-panel">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="filter-indicator">Indicator</label>
+                            <input type="text" class="form-input" id="filter-indicator" list="list-indicators" placeholder="Search indicator...">
+                            <datalist id="list-indicators"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-procurement-title">Procurement Title</label>
+                            <input type="text" class="form-input" id="filter-procurement-title" list="list-titles" placeholder="Search title...">
+                            <datalist id="list-titles"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-supplier">Supplier</label>
+                            <input type="text" class="form-input" id="filter-supplier" list="list-suppliers" placeholder="Search supplier...">
+                            <datalist id="list-suppliers"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-brand">Brand</label>
+                            <input type="text" class="form-input" id="filter-brand" list="list-brands" placeholder="Search brand...">
+                            <datalist id="list-brands"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-model">Model</label>
+                            <input type="text" class="form-input" id="filter-model" list="list-models" placeholder="Search model...">
+                            <datalist id="list-models"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-property-number">Property Number</label>
+                            <input type="text" class="form-input" id="filter-property-number" list="list-prop-nos" placeholder="Search property #...">
+                            <datalist id="list-prop-nos"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-serial-number">Serial Number</label>
+                            <input type="text" class="form-input" id="filter-serial-number" list="list-serial-nos" placeholder="Search serial #...">
+                            <datalist id="list-serial-nos"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-person-accountable">Person Accountable</label>
+                            <input type="text" class="form-input" id="filter-person-accountable" list="list-persons" placeholder="Search person...">
+                            <datalist id="list-persons"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-used-by">Used By</label>
+                            <input type="text" class="form-input" id="filter-used-by" list="list-users" placeholder="Search user...">
+                            <datalist id="list-users"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-position">Position</label>
+                            <input type="text" class="form-input" id="filter-position" list="list-positions" placeholder="Search position...">
+                            <datalist id="list-positions"></datalist>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-acquisition-date">📅 Acquisition Date</label>
+                            <input type="date" class="form-input" id="filter-acquisition-date">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-inventory-date">📅 Inventory Date</label>
+                            <input type="date" class="form-input" id="filter-inventory-date">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-cost">Cost (Exact)</label>
+                            <input type="number" class="form-input" id="filter-cost" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-description">Description</label>
+                            <input type="text" class="form-input" id="filter-description" placeholder="Keywords...">
+                        </div>
+                    </div>
+                    <div class="filters-actions">
+                        <button class="btn btn-outline btn-sm" id="btn-reset-filters">🧹 Reset Filters</button>
+                        <button class="btn btn-primary btn-sm" id="btn-apply-filters">🔍 Apply Advanced Filters</button>
                     </div>
                 </div>
 
