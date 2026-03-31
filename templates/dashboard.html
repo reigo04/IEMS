@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IEMS - ICT Equipment Inventory Management System Dashboard">
+    <title>IEMS — Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">☰</button>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-badge">🖥️</div>
+                    <div class="logo-text">
+                        <h2>IEMS</h2>
+                        <span>Inventory System</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-label">Main Menu</div>
+                <div class="nav-item active" data-tab="overview" id="nav-overview">
+                    <span class="nav-icon">📊</span>
+                    <span>Overview</span>
+                </div>
+                <div class="nav-item" data-tab="equipment" id="nav-equipment">
+                    <span class="nav-icon">🖥️</span>
+                    <span>Equipment</span>
+                </div>
+                <div class="nav-item" data-tab="reports" id="nav-reports">
+                    <span class="nav-icon">📄</span>
+                    <span>Reports</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">{{ current_user.username[0]|upper }}</div>
+                    <div class="user-details">
+                        <div class="name">{{ current_user.username }}</div>
+                        <div class="role">{{ current_user.role }}</div>
+                    </div>
+                    <a href="/logout" class="btn-logout" title="Logout" id="logout-btn">⏻</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ==================== OVERVIEW TAB ==================== -->
+            <div class="tab-content active" id="tab-overview">
+                <div class="page-header">
+                    <h1>📊 Overview</h1>
+                    <p>Dashboard summary of all ICT equipment</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Total Equipment</div>
+                    </div>
+                    <div class="stat-card serviceable">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="stat-serviceable">0</div>
+                        <div class="stat-label">Serviceable</div>
+                    </div>
+                    <div class="stat-card unserviceable">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-value" id="stat-unserviceable">0</div>
+                        <div class="stat-label">Unserviceable</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3><span class="icon">🍩</span> Equipment by Type</h3>
+                        <div class="chart-container">
+                            <canvas id="chart-by-type"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3><span class="icon">📍</span> Equipment by Location <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">(click bar to view details)</span></h3>
+                        <div class="chart-container">
+                            <canvas id="chart-by-location"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recently Added -->
+                <div class="section-card">
+                    <h3><span class="icon">🕐</span> Recently Added Equipment</h3>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="recent-table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Procurement Title</th>
+                                    <th>Type</th>
+                                    <th>Brand / Model</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Date Added</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== EQUIPMENT TAB ==================== -->
+            <div class="tab-content" id="tab-equipment">
+                <div class="page-header">
+                    <h1>🖥️ Equipment</h1>
+                    <p>Manage all ICT equipment inventory</p>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="equipment-search" placeholder="Search equipment...">
+                        </div>
+                        <select class="filter-select" id="filter-type">
+                            <option value="">All Types</option>
+                        </select>
+                        <select class="filter-select" id="filter-location">
+                            <option value="">All Locations</option>
+                        </select>
+                        <select class="filter-select" id="filter-status">
+                            <option value="">All Status</option>
+                            <option value="serviceable">Serviceable</option>
+                            <option value="unserviceable">Unserviceable</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-outline btn-sm" id="btn-import-excel">
+                            📥 Import Excel
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="btn-add-new">
+                            ➕ Add New
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Bar -->
+                <div class="bulk-bar" id="bulk-bar">
+                    <span class="bulk-count" id="bulk-count">0 selected</span>
+                    <button class="btn btn-danger btn-sm" id="btn-bulk-delete">🗑️ Delete Selected</button>
+                    <button class="btn btn-outline btn-sm" id="btn-clear-selection">Clear Selection</button>
+                </div>
+
+                <!-- Equipment Table -->
+                <div class="section-card" style="padding: 0;">
+                    <div class="table-wrapper" style="max-height: 60vh; overflow-y: auto;">
+                        <table class="data-table" id="equipment-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;"><input type="checkbox" class="row-checkbox" id="select-all"></th>
+                                    <th>No.</th>
+                                    <th>Procurement Title</th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Model</th>
+                                    <th>Serial No.</th>
+                                    <th>Location</th>
+                                    <th>Person Accountable</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipment-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" style="padding: 12px 20px;" id="pagination-wrapper">
+                        <div class="pagination-info" id="pagination-info"></div>
+                        <div class="pagination-controls" id="pagination-controls"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== REPORTS TAB ==================== -->
+            <div class="tab-content" id="tab-reports">
+                <div class="page-header">
+                    <h1>📄 Reports</h1>
+                    <p>Generate and download inventory reports</p>
+                </div>
+
+                <div class="report-config">
+                    <!-- Left: Format & Filters -->
+                    <div class="report-panel">
+                        <h3>📋 Report Settings</h3>
+
+                        <!-- Format -->
+                        <div class="mb-2">
+                            <label class="form-group-inline" style="margin-bottom: 12px;">
+                                <span style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Export Format</span>
+                            </label>
+                            <div class="format-options">
+                                <div class="format-option">
+                                    <input type="radio" name="report-format" id="format-csv" value="csv" checked>
+                                    <label for="format-csv">
+                                        <span class="format-icon">📊</span>
+                                        <span class="format-name">CSV</span>
+                                    </label>
+                                </div>
+                                <div class="format-option">
+                                    <input type="radio" name="report-format" id="format-pdf" value="pdf">
+                                    <label for="format-pdf">
+                                        <span class="format-icon">📑</span>
+                                        <span class="format-name">PDF</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>Filter by Type</label>
+                                <select class="filter-select" id="report-filter-type" style="width:100%;">
+                                    <option value="">All Types</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>Filter by Location</label>
+                                <select class="filter-select" id="report-filter-location" style="width:100%;">
+                                    <option value="">All Locations</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>Filter by Status</label>
+                                <select class="filter-select" id="report-filter-status" style="width:100%;">
+                                    <option value="">All Status</option>
+                                    <option value="serviceable">Serviceable</option>
+                                    <option value="unserviceable">Unserviceable</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block mt-2" id="btn-generate-report">
+                            📥 Generate Report
+                        </button>
+                    </div>
+
+                    <!-- Right: Column Selection -->
+                    <div class="report-panel">
+                        <h3 class="d-flex justify-between items-center" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>📋 Select Columns</span>
+                            <span>
+                                <button class="btn btn-outline btn-sm" id="btn-select-all-cols" style="margin-right:4px;">Select All</button>
+                                <button class="btn btn-outline btn-sm" id="btn-deselect-all-cols">Deselect All</button>
+                            </span>
+                        </h3>
+                        <div class="column-grid" id="column-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== ADD/EDIT EQUIPMENT MODAL ==================== -->
+    <div class="modal-overlay" id="equipment-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Equipment</h2>
+                <button class="modal-close" id="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="equipment-form">
+                    <input type="hidden" id="eq-id" name="id">
+
+                    <!-- Section: Basic Info -->
+                    <div class="form-section">
+                        <div class="form-section-title">📋 Basic Information</div>
+                        <div class="form-row form-row-3">
+                            <div class="form-group-inline">
+                                <label for="eq-indicator">Indicator</label>
+                                <input type="text" id="eq-indicator" class="form-input" placeholder="e.g. ICT-001">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-procurement-title">Procurement Title</label>
+                                <input type="text" id="eq-procurement-title" class="form-input" placeholder="e.g. Desktop Computer Unit">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-supplier">Supplier</label>
+                                <input type="text" id="eq-supplier" class="form-input" placeholder="e.g. PC Express">
+                            </div>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="form-group-inline">
+                                <label for="eq-type">Type of Equipment</label>
+                                <input type="text" id="eq-type" class="form-input" placeholder="e.g. Desktop, Laptop, Printer">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-brand">Brand</label>
+                                <input type="text" id="eq-brand" class="form-input" placeholder="e.g. Dell, HP, Lenovo">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-model">Model</label>
+                                <input type="text" id="eq-model" class="form-input" placeholder="e.g. OptiPlex 7080">
+                            </div>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="form-group-inline">
+                                <label for="eq-location">Location</label>
+                                <input type="text" id="eq-location" class="form-input" placeholder="e.g. IT Office">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-property-number">Property Number</label>
+                                <input type="text" id="eq-property-number" class="form-input" placeholder="e.g. PROP-2024-001">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-serial-number">Serial Number</label>
+                                <input type="text" id="eq-serial-number" class="form-input" placeholder="e.g. SN-DELL-7080-001">
+                            </div>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="form-group-inline">
+                                <label for="eq-acquisition-date">Acquisition Date</label>
+                                <input type="date" id="eq-acquisition-date" class="form-input">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-cost">Cost (₱)</label>
+                                <input type="number" id="eq-cost" class="form-input" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-inventory-date">Inventory Date</label>
+                                <input type="date" id="eq-inventory-date" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-group-inline">
+                            <label for="eq-description">Description</label>
+                            <textarea id="eq-description" class="form-input" placeholder="Enter equipment description..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section: Accountability -->
+                    <div class="form-section">
+                        <div class="form-section-title">👤 Accountability</div>
+                        <div class="form-row form-row-4">
+                            <div class="form-group-inline">
+                                <label for="eq-person-accountable">Person Accountable</label>
+                                <input type="text" id="eq-person-accountable" class="form-input" placeholder="Full Name">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-person-position">Position</label>
+                                <input type="text" id="eq-person-position" class="form-input" placeholder="e.g. IT Officer III">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-used-by">Used By</label>
+                                <input type="text" id="eq-used-by" class="form-input" placeholder="Full Name">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="eq-used-by-position">Position</label>
+                                <input type="text" id="eq-used-by-position" class="form-input" placeholder="e.g. Admin Aide IV">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Condition Checklist (Yes/No) -->
+                    <div class="form-section">
+                        <div class="form-section-title">✅ Condition Checklist</div>
+                        <div class="toggle-grid">
+                            <div class="toggle-item">
+                                <span>With Warranty</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-with-warranty">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Clear Monitor</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-clear-monitor">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Active CMOS Battery</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-active-cmos-battery">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Charging UPS</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-charging-ups">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Working I/O Ports & Connections</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-working-io-ports">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Updated/Patched OS</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-updated-patched-os">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Weekly Scan Antivirus</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-weekly-scan-antivirus">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Working Keyboard & Mouse</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="eq-working-keyboard-mouse">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Status -->
+                    <div class="form-section">
+                        <div class="form-section-title">🔘 Equipment Status</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="eq-status" id="eq-status-serviceable" value="serviceable" checked>
+                                <label for="eq-status-serviceable">✅ Serviceable</label>
+                            </div>
+                            <div class="radio-option unserviceable">
+                                <input type="radio" name="eq-status" id="eq-status-unserviceable" value="unserviceable">
+                                <label for="eq-status-unserviceable">⚠️ Unserviceable</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Additional -->
+                    <div class="form-section">
+                        <div class="form-section-title">📝 Additional Information</div>
+                        <div class="form-group-inline">
+                            <label for="eq-remarks">Remarks / Recommendation</label>
+                            <textarea id="eq-remarks" class="form-input" placeholder="Enter remarks or recommendations..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section: Repair History (File Upload) -->
+                    <div class="form-section" id="repair-history-section">
+                        <div class="form-section-title">🔧 Repair History (Maintenance Request Forms)</div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Upload scanned copies of Maintenance Request Forms as basis for repair history. Accepted: PDF, JPG, PNG.
+                        </p>
+
+                        <!-- Only visible when editing (equipment already saved) -->
+                        <div id="repair-upload-area" style="display:none;">
+                            <div class="repair-drop-zone" id="repair-drop-zone">
+                                <div class="drop-icon">📂</div>
+                                <h4>Drag & drop scanned forms here</h4>
+                                <p>or click to browse — PDF, JPG, PNG</p>
+                                <input type="file" id="repair-file-input" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none;">
+                            </div>
+
+                            <div id="repair-files-list" class="repair-files-list" style="margin-top: 12px;">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <div id="repair-save-first-notice" class="save-first-notice">
+                            <div class="notice-icon">💡</div>
+                            <p>Save the equipment first, then edit it to upload repair history files.</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="modal-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="modal-save-btn">💾 Save Equipment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW EQUIPMENT MODAL ==================== -->
+    <div class="modal-overlay" id="view-equipment-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 id="view-modal-title">📋 Equipment Details</h2>
+                <button class="modal-close" id="view-modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body" id="view-modal-body">
+                <!-- Populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="view-modal-close-footer">Close</button>
+                <button class="btn btn-primary" id="view-modal-edit-btn">✏️ Edit Equipment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== IMPORT MODAL ==================== -->
+    <div class="modal-overlay" id="import-modal">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2>📥 Import from Excel</h2>
+                <button class="modal-close" id="import-close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="drop-zone" id="drop-zone">
+                    <div class="drop-icon">📂</div>
+                    <h4>Drag & drop your Excel file here</h4>
+                    <p>or click to browse — supports .xlsx files</p>
+                    <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;">
+                </div>
+                <div id="import-file-info" style="margin-top:16px; display:none;">
+                    <div class="d-flex items-center gap-1" style="display:flex; align-items:center; gap:8px; padding:12px; background:var(--bg-input); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <span>📄</span>
+                        <span id="import-filename" style="flex:1; font-size:0.85rem; color:var(--text-primary);"></span>
+                        <button class="btn btn-outline btn-sm" id="import-clear-btn">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="import-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="import-upload-btn" disabled>📤 Upload & Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DELETE CONFIRM MODAL ==================== -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <div class="confirm-icon">🗑️</div>
+                <div class="confirm-text" id="delete-confirm-text">Are you sure you want to delete this equipment?</div>
+                <div class="confirm-sub">This action cannot be undone.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="delete-cancel-btn">Cancel</button>
+                <button class="btn btn-danger" id="delete-confirm-btn">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LOCATION POPUP ==================== -->
+    <div class="location-popup-overlay" id="location-popup">
+        <div class="location-popup">
+            <div class="modal-header">
+                <h2 id="location-popup-title">📍 Equipment at Location</h2>
+                <button class="modal-close" id="location-popup-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-wrapper" style="max-height: 50vh;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Procurement Title</th>
+                                <th>Type</th>
+                                <th>Brand / Model</th>
+                                <th>Serial No.</th>
+                                <th>Person Accountable</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="location-popup-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/equipment.js"></script>
+    <script src="/static/js/reports.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IEMS - ICT Equipment Inventory Management System Login">
+    <title>IEMS — Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon">🖥️</div>
+                <h1>IEMS</h1>
+                <p>ICT Equipment Inventory Management System</p>
+            </div>
+
+            {% if error %}
+            <div class="login-error" id="login-error">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/login" id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input"
+                           placeholder="Enter your username" autocomplete="username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input"
+                           placeholder="Enter your password" autocomplete="current-password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+                    Sign In
+                </button>
+            </form>
+
+            <p style="text-align:center; margin-top:24px; font-size:0.75rem; color:var(--text-muted);">
+                Authorized personnel only
+            </p>
+        </div>
+    </div>
+</body>
+</html>
