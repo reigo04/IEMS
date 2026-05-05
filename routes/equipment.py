@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, send_file
-from flask_login import login_required
-from models import db, Equipment, RepairFile
+from flask_login import login_required, current_user
+from models import db, Equipment, RepairFile, EquipmentTransfer
 from datetime import datetime, date
 import openpyxl
 import io
@@ -245,6 +245,96 @@ def delete_equipment(eq_id):
     return jsonify({'message': 'Equipment deleted successfully'})
 
 
+@equipment_bp.route('/api/equipment/all-ids', methods=['GET'])
+@login_required
+def get_all_ids():
+    """Return all equipment IDs matching current filters (no pagination)."""
+    search = request.args.get('search', '').strip()
+    filter_type = request.args.get('type', '').strip()
+    filter_location = request.args.get('location', '').strip()
+    filter_status = request.args.get('status', '').strip()
+    f_indicator = request.args.get('indicator', '').strip()
+    f_procurement_title = request.args.get('procurement_title', '').strip()
+    f_supplier = request.args.get('supplier', '').strip()
+    f_brand = request.args.get('brand', '').strip()
+    f_model = request.args.get('model', '').strip()
+    f_property_number = request.args.get('property_number', '').strip()
+    f_serial_number = request.args.get('serial_number', '').strip()
+    f_person_accountable = request.args.get('person_accountable', '').strip()
+    f_used_by = request.args.get('used_by', '').strip()
+    f_position = request.args.get('position', '').strip()
+    f_acquisition_date = request.args.get('acquisition_date', '').strip()
+    f_inventory_date = request.args.get('inventory_date', '').strip()
+    f_cost = request.args.get('cost', '').strip()
+    f_description = request.args.get('description', '').strip()
+
+    query = db.session.query(Equipment.id)
+
+    if search:
+        search_term = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Equipment.procurement_title.ilike(search_term),
+                Equipment.brand.ilike(search_term),
+                Equipment.model.ilike(search_term),
+                Equipment.serial_number.ilike(search_term),
+                Equipment.property_number.ilike(search_term),
+                Equipment.person_accountable.ilike(search_term),
+                Equipment.used_by.ilike(search_term),
+                Equipment.location.ilike(search_term),
+                Equipment.supplier.ilike(search_term),
+            )
+        )
+
+    if filter_type:
+        query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
+    if filter_location:
+        query = query.filter(Equipment.location.ilike(f'%{filter_location}%'))
+    if filter_status:
+        query = query.filter(Equipment.status.ilike(f'%{filter_status}%'))
+    if f_indicator:
+        query = query.filter(Equipment.indicator.ilike(f'%{f_indicator}%'))
+    if f_procurement_title:
+        query = query.filter(Equipment.procurement_title.ilike(f'%{f_procurement_title}%'))
+    if f_supplier:
+        query = query.filter(Equipment.supplier.ilike(f'%{f_supplier}%'))
+    if f_brand:
+        query = query.filter(Equipment.brand.ilike(f'%{f_brand}%'))
+    if f_model:
+        query = query.filter(Equipment.model.ilike(f'%{f_model}%'))
+    if f_property_number:
+        query = query.filter(Equipment.property_number.ilike(f'%{f_property_number}%'))
+    if f_serial_number:
+        query = query.filter(Equipment.serial_number.ilike(f'%{f_serial_number}%'))
+    if f_person_accountable:
+        query = query.filter(Equipment.person_accountable.ilike(f'%{f_person_accountable}%'))
+    if f_used_by:
+        query = query.filter(Equipment.used_by.ilike(f'%{f_used_by}%'))
+    if f_position:
+        query = query.filter(db.or_(
+            Equipment.person_accountable_position.ilike(f'%{f_position}%'),
+            Equipment.used_by_position.ilike(f'%{f_position}%')
+        ))
+    if f_acquisition_date:
+        p_date = parse_date(f_acquisition_date)
+        if p_date:
+            query = query.filter(Equipment.acquisition_date == p_date)
+    if f_inventory_date:
+        p_date = parse_date(f_inventory_date)
+        if p_date:
+            query = query.filter(Equipment.inventory_date == p_date)
+    if f_cost:
+        try:
+            query = query.filter(Equipment.cost == float(f_cost))
+        except ValueError:
+            pass
+    if f_description:
+        query = query.filter(Equipment.description.ilike(f'%{f_description}%'))
+
+    ids = [row[0] for row in query.all()]
+    return jsonify({'ids': ids, 'total': len(ids)})
+
+
 @equipment_bp.route('/api/equipment/bulk-delete', methods=['POST'])
 @login_required
 def bulk_delete():
@@ -271,6 +361,128 @@ def bulk_delete():
     Equipment.query.filter(Equipment.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
     return jsonify({'message': f'{len(ids)} equipment(s) deleted successfully'})
+
+
+# ── Transfer Routes ──
+
+@equipment_bp.route('/api/equipment/<int:eq_id>/transfer', methods=['POST'])
+@login_required
+def transfer_equipment(eq_id):
+    eq = Equipment.query.get_or_404(eq_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    to_pa = data.get('to_person_accountable', '').strip()
+    transfer_date_raw = data.get('transfer_date', '').strip()
+    reason = data.get('reason', '').strip()
+
+    if not to_pa:
+        return jsonify({'error': 'New person accountable is required'}), 400
+    if not transfer_date_raw:
+        return jsonify({'error': 'Transfer date is required'}), 400
+    if not reason:
+        return jsonify({'error': 'Reason is required'}), 400
+
+    transfer_date = parse_date(transfer_date_raw)
+
+    # Record snapshot of current state
+    t = EquipmentTransfer(
+        equipment_id=eq_id,
+        from_person_accountable=eq.person_accountable or '',
+        from_person_accountable_position=eq.person_accountable_position or '',
+        from_used_by=eq.used_by or '',
+        from_used_by_position=eq.used_by_position or '',
+        from_location=eq.location or '',
+        to_person_accountable=to_pa,
+        to_person_accountable_position=data.get('to_person_accountable_position', '').strip(),
+        to_used_by=data.get('to_used_by', '').strip(),
+        to_used_by_position=data.get('to_used_by_position', '').strip(),
+        to_location=data.get('to_location', '').strip() or eq.location or '',
+        transfer_date=transfer_date,
+        reason=reason,
+        notes=data.get('notes', '').strip(),
+        transferred_by=current_user.username,
+    )
+    db.session.add(t)
+
+    # Update equipment fields
+    eq.person_accountable = to_pa
+    eq.person_accountable_position = data.get('to_person_accountable_position', '').strip()
+    eq.used_by = data.get('to_used_by', '').strip()
+    eq.used_by_position = data.get('to_used_by_position', '').strip()
+    if data.get('to_location', '').strip():
+        eq.location = data.get('to_location', '').strip()
+    eq.updated_at = datetime.utcnow()
+
+    db.session.commit()
+    return jsonify({'message': 'Transfer recorded successfully', 'transfer': t.to_dict()})
+
+
+@equipment_bp.route('/api/equipment/<int:eq_id>/transfers', methods=['GET'])
+@login_required
+def get_transfers(eq_id):
+    Equipment.query.get_or_404(eq_id)
+    transfers = EquipmentTransfer.query.filter_by(equipment_id=eq_id)\
+        .order_by(EquipmentTransfer.transfer_date.desc(), EquipmentTransfer.created_at.desc()).all()
+    return jsonify([t.to_dict() for t in transfers])
+
+
+@equipment_bp.route('/api/equipment/bulk-transfer', methods=['POST'])
+@login_required
+def bulk_transfer():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    to_pa = data.get('to_person_accountable', '').strip()
+    transfer_date_raw = data.get('transfer_date', '').strip()
+    reason = data.get('reason', '').strip()
+
+    if not ids:
+        return jsonify({'error': 'No IDs provided'}), 400
+    if not to_pa:
+        return jsonify({'error': 'New person accountable is required'}), 400
+    if not transfer_date_raw:
+        return jsonify({'error': 'Transfer date is required'}), 400
+    if not reason:
+        return jsonify({'error': 'Reason is required'}), 400
+
+    transfer_date = parse_date(transfer_date_raw)
+    to_pa_pos = data.get('to_person_accountable_position', '').strip()
+    to_ub = data.get('to_used_by', '').strip()
+    to_ub_pos = data.get('to_used_by_position', '').strip()
+    to_loc = data.get('to_location', '').strip()
+    notes = data.get('notes', '').strip()
+
+    equipments = Equipment.query.filter(Equipment.id.in_(ids)).all()
+    for eq in equipments:
+        t = EquipmentTransfer(
+            equipment_id=eq.id,
+            from_person_accountable=eq.person_accountable or '',
+            from_person_accountable_position=eq.person_accountable_position or '',
+            from_used_by=eq.used_by or '',
+            from_used_by_position=eq.used_by_position or '',
+            from_location=eq.location or '',
+            to_person_accountable=to_pa,
+            to_person_accountable_position=to_pa_pos,
+            to_used_by=to_ub,
+            to_used_by_position=to_ub_pos,
+            to_location=to_loc or eq.location or '',
+            transfer_date=transfer_date,
+            reason=reason,
+            notes=notes,
+            transferred_by=current_user.username,
+        )
+        db.session.add(t)
+        eq.person_accountable = to_pa
+        eq.person_accountable_position = to_pa_pos
+        eq.used_by = to_ub
+        eq.used_by_position = to_ub_pos
+        if to_loc:
+            eq.location = to_loc
+        eq.updated_at = datetime.utcnow()
+
+    db.session.commit()
+    return jsonify({'message': f'{len(equipments)} equipment(s) transferred successfully'})
 
 
 # ── Repair File Upload/Download/Delete ──
@@ -391,7 +603,7 @@ def import_excel():
         return jsonify({'error': 'Invalid file type. Please upload an Excel file (.xlsx)'}), 400
 
     try:
-        wb = openpyxl.load_workbook(io.BytesIO(file.read()))
+        wb = openpyxl.load_workbook(io.BytesIO(file.read()), data_only=True)
         ws = wb.active
 
         # Map header row to column indices

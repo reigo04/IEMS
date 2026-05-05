@@ -22,7 +22,6 @@ class Equipment(db.Model):
     __tablename__ = 'equipment'
 
     id = db.Column(db.Integer, primary_key=True)
-    # Core fields from PPT template
     indicator = db.Column(db.String(100), default='')
     procurement_title = db.Column(db.String(255), default='')
     supplier = db.Column(db.String(255), default='')
@@ -40,7 +39,6 @@ class Equipment(db.Model):
     used_by = db.Column(db.String(255), default='')
     used_by_position = db.Column(db.String(255), default='')
 
-    # Yes/No boolean fields
     with_warranty = db.Column(db.Boolean, default=False)
     clear_monitor = db.Column(db.Boolean, default=False)
     active_cmos_battery = db.Column(db.Boolean, default=False)
@@ -50,19 +48,19 @@ class Equipment(db.Model):
     weekly_scan_antivirus = db.Column(db.Boolean, default=False)
     working_keyboard_mouse = db.Column(db.Boolean, default=False)
 
-    # Additional fields
     remarks_recommendation = db.Column(db.Text, default='')
     inventory_date = db.Column(db.Date, nullable=True)
-    repair_history = db.Column(db.Text, default='')  # Legacy text field (kept for old data)
-    status = db.Column(db.String(20), default='serviceable')  # serviceable or unserviceable
+    repair_history = db.Column(db.Text, default='')
+    status = db.Column(db.String(20), default='serviceable')
 
-    # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship to repair files
     repair_files = db.relationship('RepairFile', backref='equipment', lazy=True,
                                    cascade='all, delete-orphan')
+    transfers = db.relationship('EquipmentTransfer', backref='equipment', lazy=True,
+                                cascade='all, delete-orphan',
+                                order_by='EquipmentTransfer.transfer_date.desc()')
 
     def to_dict(self):
         return {
@@ -98,6 +96,7 @@ class Equipment(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else '',
             'updated_at': self.updated_at.isoformat() if self.updated_at else '',
             'repair_files': [rf.to_dict() for rf in self.repair_files],
+            'transfers': [t.to_dict() for t in self.transfers],
         }
 
     def __repr__(self):
@@ -109,10 +108,10 @@ class RepairFile(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     equipment_id = db.Column(db.Integer, db.ForeignKey('equipment.id'), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)        # Stored filename (UUID-based)
-    original_filename = db.Column(db.String(255), nullable=False)  # User's original filename
-    file_type = db.Column(db.String(50), default='')            # e.g. 'pdf', 'jpg', 'png'
-    file_size = db.Column(db.Integer, default=0)                # Size in bytes
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(50), default='')
+    file_size = db.Column(db.Integer, default=0)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -128,3 +127,56 @@ class RepairFile(db.Model):
 
     def __repr__(self):
         return f'<RepairFile {self.id} - {self.original_filename}>'
+
+
+class EquipmentTransfer(db.Model):
+    __tablename__ = 'equipment_transfers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    equipment_id = db.Column(db.Integer, db.ForeignKey('equipment.id'), nullable=False)
+
+    # Previous accountability snapshot
+    from_person_accountable = db.Column(db.String(255), default='')
+    from_person_accountable_position = db.Column(db.String(255), default='')
+    from_used_by = db.Column(db.String(255), default='')
+    from_used_by_position = db.Column(db.String(255), default='')
+    from_location = db.Column(db.String(255), default='')
+
+    # New accountability
+    to_person_accountable = db.Column(db.String(255), default='')
+    to_person_accountable_position = db.Column(db.String(255), default='')
+    to_used_by = db.Column(db.String(255), default='')
+    to_used_by_position = db.Column(db.String(255), default='')
+    to_location = db.Column(db.String(255), default='')
+
+    # Transfer metadata
+    transfer_date = db.Column(db.Date, nullable=True)
+    reason = db.Column(db.Text, default='')
+    notes = db.Column(db.Text, default='')
+    transferred_by = db.Column(db.String(100), default='')
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'equipment_id': self.equipment_id,
+            'from_person_accountable': self.from_person_accountable or '',
+            'from_person_accountable_position': self.from_person_accountable_position or '',
+            'from_used_by': self.from_used_by or '',
+            'from_used_by_position': self.from_used_by_position or '',
+            'from_location': self.from_location or '',
+            'to_person_accountable': self.to_person_accountable or '',
+            'to_person_accountable_position': self.to_person_accountable_position or '',
+            'to_used_by': self.to_used_by or '',
+            'to_used_by_position': self.to_used_by_position or '',
+            'to_location': self.to_location or '',
+            'transfer_date': self.transfer_date.isoformat() if self.transfer_date else '',
+            'reason': self.reason or '',
+            'notes': self.notes or '',
+            'transferred_by': self.transferred_by or '',
+            'created_at': self.created_at.isoformat() if self.created_at else '',
+        }
+
+    def __repr__(self):
+        return f'<EquipmentTransfer {self.id} eq={self.equipment_id}>'

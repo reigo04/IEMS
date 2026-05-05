@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
 </head>
 <body>
     <div class="app-layout">
@@ -50,7 +51,10 @@
                         <div class="name">{{ current_user.username }}</div>
                         <div class="role">{{ current_user.role }}</div>
                     </div>
-                    <a href="/logout" class="btn-logout" title="Logout" id="logout-btn">⏻</a>
+                    <div class="sidebar-footer-actions">
+                        <button class="btn-theme-toggle" id="theme-toggle-btn" title="Toggle Dark/Light Mode">🌙</button>
+                        <a href="/logout" class="btn-logout" title="Logout" id="logout-btn">⏻</a>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -86,8 +90,8 @@
                 <!-- Charts -->
                 <div class="charts-grid">
                     <div class="chart-card">
-                        <h3><span class="icon">🍩</span> Equipment by Type</h3>
-                        <div class="chart-container">
+                        <h3><span class="icon">🗂️</span> Equipment by Type</h3>
+                        <div class="chart-container" style="height:320px;">
                             <canvas id="chart-by-type"></canvas>
                         </div>
                     </div>
@@ -242,8 +246,17 @@
                 <!-- Bulk Actions Bar -->
                 <div class="bulk-bar" id="bulk-bar">
                     <span class="bulk-count" id="bulk-count">0 selected</span>
+                    <button class="btn btn-accent btn-sm" id="btn-bulk-transfer">🔄 Transfer Selected</button>
                     <button class="btn btn-danger btn-sm" id="btn-bulk-delete">🗑️ Delete Selected</button>
-                    <button class="btn btn-outline btn-sm" id="btn-clear-selection">Clear Selection</button>
+                    <button class="btn btn-outline btn-sm" id="btn-clear-selection">✕ Clear Selection</button>
+                </div>
+
+                <!-- Global Select All Banner -->
+                <div class="global-select-bar" id="global-select-bar">
+                    <span class="global-select-msg" id="global-select-msg"></span>
+                    <button class="global-select-link" id="btn-select-all-db">Select all equipment in the system</button>
+                    <span class="global-select-sep">·</span>
+                    <button class="global-select-link" id="btn-cancel-global-select">Clear selection</button>
                 </div>
 
                 <!-- Equipment Table -->
@@ -595,6 +608,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="view-modal-close-footer">Close</button>
+                <button class="btn btn-accent" id="view-modal-transfer-btn">🔄 Transfer</button>
                 <button class="btn btn-primary" id="view-modal-edit-btn">✏️ Edit Equipment</button>
             </div>
         </div>
@@ -625,6 +639,165 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" id="import-cancel-btn">Cancel</button>
                 <button class="btn btn-primary" id="import-upload-btn" disabled>📤 Upload & Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TRANSFER EQUIPMENT MODAL ==================== -->
+    <div class="modal-overlay" id="transfer-modal">
+        <div class="modal" style="max-width:680px;">
+            <div class="modal-header">
+                <h2>🔄 Transfer Equipment</h2>
+                <button class="modal-close" id="transfer-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="transfer-eq-id">
+
+                <!-- From (read-only snapshot) -->
+                <div class="form-section">
+                    <div class="form-section-title" style="color:var(--text-muted);">📤 Current Accountability (From)</div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>Person Accountable</label>
+                            <input type="text" id="transfer-from-pa" class="form-input" readonly style="opacity:0.6;">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="transfer-from-pa-pos" class="form-input" readonly style="opacity:0.6;">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>Used By</label>
+                            <input type="text" id="transfer-from-ub" class="form-input" readonly style="opacity:0.6;">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="transfer-from-ub-pos" class="form-input" readonly style="opacity:0.6;">
+                        </div>
+                    </div>
+                    <div class="form-group-inline">
+                        <label>Location</label>
+                        <input type="text" id="transfer-from-loc" class="form-input" readonly style="opacity:0.6;">
+                    </div>
+                </div>
+
+                <!-- To (editable) -->
+                <div class="form-section">
+                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)</div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>New Person Accountable <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="transfer-to-pa" class="form-input" placeholder="Full name of new accountable person">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="transfer-to-pa-pos" class="form-input" placeholder="e.g. IT Officer III">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>New Used By</label>
+                            <input type="text" id="transfer-to-ub" class="form-input" placeholder="Who will physically use it">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="transfer-to-ub-pos" class="form-input" placeholder="e.g. Admin Aide">
+                        </div>
+                    </div>
+                    <div class="form-group-inline">
+                        <label>New Location</label>
+                        <input type="text" id="transfer-to-loc" class="form-input" placeholder="e.g. CAFO, ANFO (leave blank to keep same)">
+                    </div>
+                </div>
+
+                <!-- Transfer details -->
+                <div class="form-section">
+                    <div class="form-section-title">📋 Transfer Details</div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>Transfer Date <span style="color:var(--danger)">*</span></label>
+                            <input type="date" id="transfer-date" class="form-input">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Reason for Transfer <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="transfer-reason" class="form-input" placeholder="e.g. Promoted, Field transfer, Retired">
+                        </div>
+                    </div>
+                    <div class="form-group-inline">
+                        <label>Notes / Remarks</label>
+                        <textarea id="transfer-notes" class="form-input" rows="2" placeholder="Optional additional remarks..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="transfer-cancel-btn">Cancel</button>
+                <button class="btn btn-accent" id="transfer-save-btn">🔄 Confirm Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== BULK TRANSFER MODAL ==================== -->
+    <div class="modal-overlay" id="bulk-transfer-modal">
+        <div class="modal" style="max-width:600px;">
+            <div class="modal-header">
+                <h2>🔄 Bulk Transfer Equipment</h2>
+                <button class="modal-close" id="bulk-transfer-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+                    Reassign <strong id="bulk-transfer-count" style="color:var(--accent-primary);">0</strong> selected equipment to a new person accountable.
+                </p>
+
+                <div class="form-section">
+                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)</div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>New Person Accountable <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="bulk-transfer-to-pa" class="form-input" placeholder="Full name">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="bulk-transfer-to-pa-pos" class="form-input" placeholder="e.g. Division Chief">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>New Used By</label>
+                            <input type="text" id="bulk-transfer-to-ub" class="form-input" placeholder="Who will use it">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Position</label>
+                            <input type="text" id="bulk-transfer-to-ub-pos" class="form-input" placeholder="Position">
+                        </div>
+                    </div>
+                    <div class="form-group-inline">
+                        <label>New Location <span style="font-size:0.8rem; color:var(--text-muted);">(leave blank to keep each item's current location)</span></label>
+                        <input type="text" id="bulk-transfer-to-loc" class="form-input" placeholder="e.g. CAFO (optional)">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">📋 Transfer Details</div>
+                    <div class="form-row">
+                        <div class="form-group-inline">
+                            <label>Transfer Date <span style="color:var(--danger)">*</span></label>
+                            <input type="date" id="bulk-transfer-date" class="form-input">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Reason <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="bulk-transfer-reason" class="form-input" placeholder="e.g. Promoted, Retired, Field transfer">
+                        </div>
+                    </div>
+                    <div class="form-group-inline">
+                        <label>Notes / Remarks</label>
+                        <textarea id="bulk-transfer-notes" class="form-input" rows="2" placeholder="Optional remarks..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="bulk-transfer-cancel-btn">Cancel</button>
+                <button class="btn btn-accent" id="bulk-transfer-save-btn">🔄 Confirm Bulk Transfer</button>
             </div>
         </div>
     </div>

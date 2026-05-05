@@ -47,6 +47,30 @@ const CHART_COLORS = [
     '#06b6d4', '#e879f9'
 ];
 
+// ── Theme-aware color helper ──
+function getChartTheme() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+        isLight,
+        // Doughnut border: matches card background — thin hairline separator, not heavy outline
+        doughnutBorder: isLight ? 'rgba(248,250,252,0.95)' : 'rgba(10,14,22,0.85)',
+        doughnutBorderWidth: 1.5,
+        // Tooltip
+        tooltipBg:     isLight ? 'rgba(255,255,255,0.97)' : 'rgba(10,14,22,0.95)',
+        tooltipTitle:  isLight ? '#0f172a'                : '#e8edf5',
+        tooltipBody:   isLight ? '#4a5568'                : '#8896ab',
+        tooltipBorder: isLight ? 'rgba(13,148,136,0.15)' : 'rgba(56,189,248,0.1)',
+        // Legend / axis tick labels
+        labelColor:    isLight ? '#4a5568' : '#8896ab',
+        // Bar chart grid lines
+        gridColor:     isLight ? 'rgba(0,0,0,0.06)'       : 'rgba(56,189,248,0.04)',
+        axisColor:     isLight ? 'rgba(0,0,0,0.08)'       : 'rgba(56,189,248,0.08)',
+        // Bar alpha suffixes (hex)
+        barBgAlpha:    isLight ? '30' : '40',
+        barHoverAlpha: isLight ? '70' : '80',
+    };
+}
+
 async function loadChartByType() {
     try {
         const res = await api('/api/chart/by-type');
@@ -57,49 +81,88 @@ async function loadChartByType() {
 
         if (typeChart) typeChart.destroy();
 
+        const t = getChartTheme();
+
+        // Build dataset: chartjs-chart-treemap needs { key, value } objects
+        const treeData = data.labels.map((label, i) => ({
+            category: label,
+            value: data.values[i],
+            color: CHART_COLORS[i % CHART_COLORS.length],
+        }));
+
         typeChart = new Chart(ctx, {
-            type: 'doughnut',
+            type: 'treemap',
             data: {
-                labels: data.labels,
                 datasets: [{
-                    data: data.values,
-                    backgroundColor: CHART_COLORS.slice(0, data.labels.length),
-                    borderColor: 'rgba(6, 8, 13, 0.8)',
-                    borderWidth: 3,
-                    hoverBorderWidth: 0,
-                    hoverOffset: 8,
+                    label: 'Equipment by Type',
+                    tree: treeData,
+                    key: 'value',
+                    groups: ['category'],
+                    backgroundColor(ctx) {
+                        if (ctx.type !== 'data') return 'transparent';
+                        const raw = ctx.raw?._data;
+                        const idx = treeData.findIndex(d => d.category === raw?.category);
+                        const base = CHART_COLORS[idx % CHART_COLORS.length];
+                        return base + (t.isLight ? 'cc' : 'dd');  // slight transparency
+                    },
+                    borderColor(ctx) {
+                        if (ctx.type !== 'data') return 'transparent';
+                        return t.isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.3)';
+                    },
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    spacing: 2,
+                    labels: {
+                        display: true,
+                        align: 'center',
+                        position: 'middle',
+                        formatter(ctx) {
+                            if (ctx.type !== 'data') return '';
+                            const raw = ctx.raw?._data;
+                            if (!raw) return '';
+                            const total = treeData.reduce((s, d) => s + d.value, 0);
+                            const pct = ((raw.value / total) * 100).toFixed(1);
+                            // Only show label if cell is large enough
+                            const w = ctx.raw?.w ?? 0;
+                            const h = ctx.raw?.h ?? 0;
+                            if (w < 60 || h < 30) return '';
+                            if (h < 52) return [raw.value.toString()];
+                            return [raw.category, `${raw.value} (${pct}%)`];
+                        },
+                        color: '#ffffff',
+                        font: [
+                            { family: 'Inter', size: 11, weight: '600' },
+                            { family: 'Inter', size: 10, weight: '400' },
+                        ],
+                        overflow: 'hidden',
+                    },
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '65%',
                 plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: '#8896ab',
-                            font: { family: 'Inter', size: 12 },
-                            padding: 16,
-                            usePointStyle: true,
-                            pointStyleWidth: 10,
-                        }
-                    },
+                    legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(10, 14, 22, 0.95)',
-                        titleColor: '#e8edf5',
-                        bodyColor: '#8896ab',
-                        borderColor: 'rgba(56,189,248,0.1)',
+                        backgroundColor: t.tooltipBg,
+                        titleColor: t.tooltipTitle,
+                        bodyColor: t.tooltipBody,
+                        borderColor: t.tooltipBorder,
                         borderWidth: 1,
                         cornerRadius: 8,
                         padding: 12,
                         titleFont: { family: 'Inter', weight: '600' },
                         bodyFont: { family: 'Inter' },
                         callbacks: {
-                            label: function(ctx) {
-                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
-                                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                            title(items) {
+                                return items[0]?.raw?._data?.category ?? '';
+                            },
+                            label(item) {
+                                const raw = item.raw?._data;
+                                if (!raw) return '';
+                                const total = treeData.reduce((s, d) => s + d.value, 0);
+                                const pct = ((raw.value / total) * 100).toFixed(1);
+                                return ` ${raw.value} equipment (${pct}%)`;
                             }
                         }
                     }
@@ -121,6 +184,8 @@ async function loadChartByLocation() {
 
         if (locationChart) locationChart.destroy();
 
+        const t = getChartTheme();
+
         locationChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -128,11 +193,11 @@ async function loadChartByLocation() {
                 datasets: [{
                     label: 'Equipment Count',
                     data: data.values,
-                    backgroundColor: CHART_COLORS.slice(0, data.labels.length).map(c => c + '40'),
+                    backgroundColor: CHART_COLORS.slice(0, data.labels.length).map(c => c + t.barBgAlpha),
                     borderColor: CHART_COLORS.slice(0, data.labels.length),
                     borderWidth: 1.5,
                     borderRadius: 6,
-                    hoverBackgroundColor: CHART_COLORS.slice(0, data.labels.length).map(c => c + '80'),
+                    hoverBackgroundColor: CHART_COLORS.slice(0, data.labels.length).map(c => c + t.barHoverAlpha),
                 }]
             },
             options: {
@@ -151,10 +216,10 @@ async function loadChartByLocation() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(10, 14, 22, 0.95)',
-                        titleColor: '#e8edf5',
-                        bodyColor: '#8896ab',
-                        borderColor: 'rgba(56,189,248,0.1)',
+                        backgroundColor: t.tooltipBg,
+                        titleColor: t.tooltipTitle,
+                        bodyColor: t.tooltipBody,
+                        borderColor: t.tooltipBorder,
                         borderWidth: 1,
                         cornerRadius: 8,
                         padding: 12,
@@ -168,18 +233,18 @@ async function loadChartByLocation() {
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#8896ab', font: { family: 'Inter', size: 11 } },
+                        ticks: { color: t.labelColor, font: { family: 'Inter', size: 11 } },
                         grid: { display: false },
-                        border: { color: 'rgba(56,189,248,0.08)' }
+                        border: { color: t.axisColor }
                     },
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: '#8896ab',
+                            color: t.labelColor,
                             font: { family: 'Inter', size: 11 },
                             stepSize: 1,
                         },
-                        grid: { color: 'rgba(56,189,248,0.04)' },
+                        grid: { color: t.gridColor },
                         border: { display: false }
                     }
                 }
@@ -189,6 +254,20 @@ async function loadChartByLocation() {
         console.error('Failed to load location chart:', err);
     }
 }
+
+// ── Re-render charts automatically when the theme is toggled ──
+const _chartThemeObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+        if (m.attributeName === 'data-theme') {
+            if (typeChart || locationChart) {
+                loadChartByType();
+                loadChartByLocation();
+            }
+            break;
+        }
+    }
+});
+_chartThemeObserver.observe(document.documentElement, { attributes: true });
 
 async function showLocationPopup(location) {
     try {

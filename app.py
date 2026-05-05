@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
-from models import db, User, RepairFile  # noqa: F401 — RepairFile imported so tables are created
+from models import db, User, RepairFile, EquipmentTransfer  # noqa: F401 — imported so tables are created
 
 def create_app():
     app = Flask(

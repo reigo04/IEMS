@@ -8,6 +8,7 @@ let editingId = null;
 let deleteTargetIds = [];
 let searchTimeout = null;
 let currentViewId = null;
+let globalSelectActive = false; // tracks if all-in-DB are selected
 
 // ── Load Equipment List ──
 async function loadEquipment(page = 1) {
@@ -159,21 +160,45 @@ function updateBulkBar() {
 
     if (selectedIds.size > 0) {
         bar.classList.add('active');
-        count.textContent = `${selectedIds.size} selected`;
+        if (globalSelectActive) {
+            count.innerHTML = `<span style="color:var(--accent-primary);font-weight:700;">All ${selectedIds.size}</span> equipment selected`;
+        } else {
+            count.textContent = `${selectedIds.size} selected`;
+        }
     } else {
         bar.classList.remove('active');
+        globalSelectActive = false;
     }
 }
 
 function updateSelectAll() {
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.row-select');
+    const globalBar = document.getElementById('global-select-bar');
+    const globalMsg = document.getElementById('global-select-msg');
     if (!selectAll || checkboxes.length === 0) return;
 
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     const someChecked = Array.from(checkboxes).some(cb => cb.checked);
     selectAll.checked = allChecked;
     selectAll.indeterminate = someChecked && !allChecked;
+
+    // Show global-select banner when all on current page are checked but global isn't active
+    if (globalBar && globalMsg) {
+        if (allChecked && checkboxes.length > 0 && !globalSelectActive) {
+            const total = document.getElementById('pagination-info')?.textContent.match(/(\d+) equipment/);
+            const totalCount = total ? total[1] : '';
+            globalMsg.textContent = `All ${checkboxes.length} items on this page are selected.`;
+            // Update the "select all" button label with the total
+            const btnSelectDb = document.getElementById('btn-select-all-db');
+            if (btnSelectDb && totalCount) {
+                btnSelectDb.textContent = `Select all ${totalCount} equipment in the system`;
+            }
+            globalBar.classList.add('active');
+        } else if (!allChecked || globalSelectActive) {
+            if (!globalSelectActive) globalBar.classList.remove('active');
+        }
+    }
 }
 
 // ── Filter Options ──
@@ -592,12 +617,269 @@ function renderViewModal(item) {
                 </div>
             </div>
         </div>
+
+        <!-- Transfer History Timeline -->
+        <div class="transfer-history-section">
+            <h4>🔄 Transfer History</h4>
+            <div class="transfer-timeline" id="transfer-timeline-container">
+                ${renderTransferHistory(item.transfers || [])}
+            </div>
+        </div>
     `;
 }
 
 function closeViewModal() {
     document.getElementById('view-equipment-modal').classList.remove('active');
     currentViewId = null;
+}
+
+// ── Transfer History Renderer ──
+function renderTransferHistory(transfers) {
+    if (!transfers || transfers.length === 0) {
+        return '<div class="transfer-empty">🔄 No transfer history yet.</div>';
+    }
+    return transfers.map(t => {
+        const fromUsed = (t.from_used_by || t.from_used_by_position)
+            ? `<div class="transfer-party-used">Used by: <strong>${t.from_used_by || '—'}</strong>${t.from_used_by_position ? ` · ${t.from_used_by_position}` : ''}</div>` : '';
+        const toUsed = (t.to_used_by || t.to_used_by_position)
+            ? `<div class="transfer-party-used">Used by: <strong>${t.to_used_by || '—'}</strong>${t.to_used_by_position ? ` · ${t.to_used_by_position}` : ''}</div>` : '';
+        const locTag = (t.from_location !== t.to_location && t.to_location)
+            ? `<span class="transfer-location-tag">📍 ${t.from_location || '—'} → ${t.to_location}</span>` : '';
+        const notes = t.notes ? `<div class="transfer-notes-text">📝 ${t.notes}</div>` : '';
+        return `
+        <div class="transfer-entry">
+            <div class="transfer-dot">🔄</div>
+            <div class="transfer-card">
+                <div class="transfer-card-header">
+                    <span class="transfer-date-badge">📅 ${t.transfer_date || '—'}</span>
+                    <span class="transfer-recorded-by">Recorded by: ${t.transferred_by || '—'}</span>
+                </div>
+                <div class="transfer-parties">
+                    <div class="transfer-party">
+                        <div class="transfer-party-label from">From</div>
+                        <div class="transfer-party-name">${t.from_person_accountable || '—'}</div>
+                        <div class="transfer-party-pos">${t.from_person_accountable_position || ''}</div>
+                        ${fromUsed}
+                    </div>
+                    <div class="transfer-arrow">→</div>
+                    <div class="transfer-party">
+                        <div class="transfer-party-label to">To</div>
+                        <div class="transfer-party-name">${t.to_person_accountable || '—'}</div>
+                        <div class="transfer-party-pos">${t.to_person_accountable_position || ''}</div>
+                        ${toUsed}
+                    </div>
+                </div>
+                <div class="transfer-meta">
+                    <span class="transfer-reason-tag">Reason: ${t.reason}</span>
+                    ${locTag}
+                </div>
+                ${notes}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Single Transfer ──
+async function openTransferModal(id) {
+    try {
+        const res = await api(`/api/equipment/${id}`);
+        const item = await res.json();
+
+        document.getElementById('transfer-eq-id').value = id;
+        document.getElementById('transfer-from-pa').value = item.person_accountable || '';
+        document.getElementById('transfer-from-pa-pos').value = item.person_accountable_position || '';
+        document.getElementById('transfer-from-ub').value = item.used_by || '';
+        document.getElementById('transfer-from-ub-pos').value = item.used_by_position || '';
+        document.getElementById('transfer-from-loc').value = item.location || '';
+
+        // Clear To fields
+        ['transfer-to-pa','transfer-to-pa-pos','transfer-to-ub','transfer-to-ub-pos','transfer-to-loc',
+         'transfer-reason','transfer-notes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        // Default date to today
+        document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
+
+        document.getElementById('transfer-modal').classList.add('active');
+    } catch (err) {
+        showToast('Failed to load equipment data', 'error');
+    }
+}
+
+function closeTransferModal() {
+    document.getElementById('transfer-modal').classList.remove('active');
+}
+
+async function saveTransfer() {
+    const id = document.getElementById('transfer-eq-id').value;
+    const to_pa = document.getElementById('transfer-to-pa').value.trim();
+    const transfer_date = document.getElementById('transfer-date').value;
+    const reason = document.getElementById('transfer-reason').value.trim();
+
+    if (!to_pa)   { showToast('New person accountable is required', 'error'); return; }
+    if (!transfer_date) { showToast('Transfer date is required', 'error'); return; }
+    if (!reason)  { showToast('Reason is required', 'error'); return; }
+
+    const btn = document.getElementById('transfer-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const res = await api(`/api/equipment/${id}/transfer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to_person_accountable: to_pa,
+                to_person_accountable_position: document.getElementById('transfer-to-pa-pos').value.trim(),
+                to_used_by: document.getElementById('transfer-to-ub').value.trim(),
+                to_used_by_position: document.getElementById('transfer-to-ub-pos').value.trim(),
+                to_location: document.getElementById('transfer-to-loc').value.trim(),
+                transfer_date,
+                reason,
+                notes: document.getElementById('transfer-notes').value.trim(),
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || 'Transfer failed', 'error'); return; }
+
+        showToast('Transfer recorded successfully ✅', 'success');
+        closeTransferModal();
+        loadEquipment(currentPage);
+        // Refresh view modal if still open
+        if (currentViewId == id) viewEquipment(id);
+    } catch (err) {
+        showToast('Transfer failed', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Confirm Transfer';
+    }
+}
+
+// ── Bulk Transfer ──
+function openBulkTransferModal() {
+    if (selectedIds.size === 0) return;
+    document.getElementById('bulk-transfer-count').textContent = selectedIds.size;
+    ['bulk-transfer-to-pa','bulk-transfer-to-pa-pos','bulk-transfer-to-ub',
+     'bulk-transfer-to-ub-pos','bulk-transfer-to-loc','bulk-transfer-reason','bulk-transfer-notes']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('bulk-transfer-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('bulk-transfer-modal').classList.add('active');
+}
+
+function closeBulkTransferModal() {
+    document.getElementById('bulk-transfer-modal').classList.remove('active');
+}
+
+async function saveBulkTransfer() {
+    const to_pa = document.getElementById('bulk-transfer-to-pa').value.trim();
+    const transfer_date = document.getElementById('bulk-transfer-date').value;
+    const reason = document.getElementById('bulk-transfer-reason').value.trim();
+
+    if (!to_pa)         { showToast('New person accountable is required', 'error'); return; }
+    if (!transfer_date) { showToast('Transfer date is required', 'error'); return; }
+    if (!reason)        { showToast('Reason is required', 'error'); return; }
+
+    const btn = document.getElementById('bulk-transfer-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const res = await api('/api/equipment/bulk-transfer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ids: Array.from(selectedIds),
+                to_person_accountable: to_pa,
+                to_person_accountable_position: document.getElementById('bulk-transfer-to-pa-pos').value.trim(),
+                to_used_by: document.getElementById('bulk-transfer-to-ub').value.trim(),
+                to_used_by_position: document.getElementById('bulk-transfer-to-ub-pos').value.trim(),
+                to_location: document.getElementById('bulk-transfer-to-loc').value.trim(),
+                transfer_date,
+                reason,
+                notes: document.getElementById('bulk-transfer-notes').value.trim(),
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || 'Bulk transfer failed', 'error'); return; }
+
+        showToast(data.message || 'Bulk transfer completed ✅', 'success');
+        closeBulkTransferModal();
+        clearGlobalSelection();
+        loadEquipment(currentPage);
+    } catch (err) {
+        showToast('Bulk transfer failed', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Confirm Bulk Transfer';
+    }
+}
+
+async function selectAllInDatabase() {
+    const search = document.getElementById('equipment-search')?.value || '';
+    const type = document.getElementById('filter-type')?.value || '';
+    const location = document.getElementById('filter-location')?.value || '';
+    const status = document.getElementById('filter-status')?.value || '';
+    const indicator = document.getElementById('filter-indicator')?.value || '';
+    const procurement_title = document.getElementById('filter-procurement-title')?.value || '';
+    const supplier = document.getElementById('filter-supplier')?.value || '';
+    const brand = document.getElementById('filter-brand')?.value || '';
+    const model = document.getElementById('filter-model')?.value || '';
+    const property_number = document.getElementById('filter-property-number')?.value || '';
+    const serial_number = document.getElementById('filter-serial-number')?.value || '';
+    const person_accountable = document.getElementById('filter-person-accountable')?.value || '';
+    const used_by = document.getElementById('filter-used-by')?.value || '';
+    const position = document.getElementById('filter-position')?.value || '';
+    const acquisition_date = document.getElementById('filter-acquisition-date')?.value || '';
+    const inventory_date = document.getElementById('filter-inventory-date')?.value || '';
+    const cost = document.getElementById('filter-cost')?.value || '';
+    const description = document.getElementById('filter-description')?.value || '';
+
+    const params = new URLSearchParams({
+        search, type, location, status, indicator, procurement_title, supplier, brand, model,
+        property_number, serial_number, person_accountable, used_by, position,
+        acquisition_date, inventory_date, cost, description
+    });
+
+    try {
+        const res = await api(`/api/equipment/all-ids?${params}`);
+        const data = await res.json();
+        data.ids.forEach(id => selectedIds.add(id));
+        globalSelectActive = true;
+
+        // Update UI
+        const globalBar = document.getElementById('global-select-bar');
+        const globalMsg = document.getElementById('global-select-msg');
+        const btnSelectDb = document.getElementById('btn-select-all-db');
+        if (globalMsg) globalMsg.textContent = `All ${data.total} equipment in the system are selected.`;
+        if (btnSelectDb) btnSelectDb.style.display = 'none';
+        const sep = document.querySelector('.global-select-sep');
+        if (sep) sep.style.display = 'none';
+
+        updateBulkBar();
+        showToast(`All ${data.total} equipment selected`, 'success');
+    } catch (err) {
+        showToast('Failed to select all equipment', 'error');
+    }
+}
+
+function clearGlobalSelection() {
+    selectedIds.clear();
+    globalSelectActive = false;
+    const globalBar = document.getElementById('global-select-bar');
+    const btnSelectDb = document.getElementById('btn-select-all-db');
+    const sep = document.querySelector('.global-select-sep');
+    if (globalBar) globalBar.classList.remove('active');
+    if (btnSelectDb) btnSelectDb.style.display = '';
+    if (sep) sep.style.display = '';
+    // Uncheck all row checkboxes
+    document.querySelectorAll('.row-select').forEach(cb => {
+        cb.checked = false;
+        cb.closest('tr')?.classList.remove('selected');
+    });
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+    updateBulkBar();
 }
 
 // ── Delete ──
@@ -716,7 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save
     document.getElementById('modal-save-btn')?.addEventListener('click', saveEquipment);
 
-    // Select All
+    // Select All (current page)
     document.getElementById('select-all')?.addEventListener('change', (e) => {
         const checkboxes = document.querySelectorAll('.row-select');
         checkboxes.forEach(cb => {
@@ -729,20 +1011,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             cb.closest('tr').classList.toggle('selected', e.target.checked);
         });
+        // If unchecking, also clear global
+        if (!e.target.checked) {
+            globalSelectActive = false;
+            const globalBar = document.getElementById('global-select-bar');
+            const btnSelectDb = document.getElementById('btn-select-all-db');
+            const sep = document.querySelector('.global-select-sep');
+            if (globalBar) globalBar.classList.remove('active');
+            if (btnSelectDb) btnSelectDb.style.display = '';
+            if (sep) sep.style.display = '';
+        }
         updateBulkBar();
+        updateSelectAll();
     });
 
     // Bulk delete
     document.getElementById('btn-bulk-delete')?.addEventListener('click', confirmBulkDelete);
-    document.getElementById('btn-clear-selection')?.addEventListener('click', () => {
-        selectedIds.clear();
-        document.querySelectorAll('.row-select').forEach(cb => {
-            cb.checked = false;
-            cb.closest('tr').classList.remove('selected');
-        });
-        document.getElementById('select-all').checked = false;
-        updateBulkBar();
-    });
+    document.getElementById('btn-clear-selection')?.addEventListener('click', clearGlobalSelection);
+
+    // Global select-all in DB
+    document.getElementById('btn-select-all-db')?.addEventListener('click', selectAllInDatabase);
+    document.getElementById('btn-cancel-global-select')?.addEventListener('click', clearGlobalSelection);
 
     // Delete confirm modal
     document.getElementById('delete-confirm-btn')?.addEventListener('click', executeDelete);
@@ -821,8 +1110,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.id === 'view-equipment-modal') closeViewModal();
     });
     document.getElementById('view-modal-edit-btn')?.addEventListener('click', () => {
+        const idToEdit = currentViewId;
         closeViewModal();
-        if (currentViewId) editEquipment(currentViewId);
+        if (idToEdit) editEquipment(idToEdit);
+    });
+    document.getElementById('view-modal-transfer-btn')?.addEventListener('click', () => {
+        const idToTransfer = currentViewId;
+        closeViewModal();
+        if (idToTransfer) openTransferModal(idToTransfer);
+    });
+
+    // Transfer modal
+    document.getElementById('transfer-modal-close')?.addEventListener('click', closeTransferModal);
+    document.getElementById('transfer-cancel-btn')?.addEventListener('click', closeTransferModal);
+    document.getElementById('transfer-save-btn')?.addEventListener('click', saveTransfer);
+    document.getElementById('transfer-modal')?.addEventListener('click', e => {
+        if (e.target.id === 'transfer-modal') closeTransferModal();
+    });
+
+    // Bulk Transfer modal
+    document.getElementById('btn-bulk-transfer')?.addEventListener('click', openBulkTransferModal);
+    document.getElementById('bulk-transfer-modal-close')?.addEventListener('click', closeBulkTransferModal);
+    document.getElementById('bulk-transfer-cancel-btn')?.addEventListener('click', closeBulkTransferModal);
+    document.getElementById('bulk-transfer-save-btn')?.addEventListener('click', saveBulkTransfer);
+    document.getElementById('bulk-transfer-modal')?.addEventListener('click', e => {
+        if (e.target.id === 'bulk-transfer-modal') closeBulkTransferModal();
     });
 
     // Search with debounce

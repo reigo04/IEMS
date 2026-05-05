@@ -110,9 +110,34 @@ function statusBadge(status) {
     return `<span class="badge ${cls}">${icon} ${status}</span>`;
 }
 
+// ── Theme Toggle ──
+function initTheme() {
+    const saved = localStorage.getItem('iems-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeBtn(saved);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('iems-theme', next);
+    updateThemeBtn(next);
+}
+
+function updateThemeBtn(theme) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    btn.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+}
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initNavigation();
     initMobileMenu();
     loadOverview();
+
+    document.getElementById('theme-toggle-btn')?.addEventListener('click', toggleTheme);
 });
