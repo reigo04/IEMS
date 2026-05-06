@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="IEMS - ICT Equipment Inventory Management System Dashboard">
     <title>IEMS — Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
 </head>
+
 <body>
     <div class="app-layout">
         <!-- Mobile Menu Button -->
@@ -52,7 +55,8 @@
                         <div class="role">{{ current_user.role }}</div>
                     </div>
                     <div class="sidebar-footer-actions">
-                        <button class="btn-theme-toggle" id="theme-toggle-btn" title="Toggle Dark/Light Mode">🌙</button>
+                        <button class="btn-theme-toggle" id="theme-toggle-btn"
+                            title="Toggle Dark/Light Mode">🌙</button>
                         <a href="/logout" class="btn-logout" title="Logout" id="logout-btn">⏻</a>
                     </div>
                 </div>
@@ -96,7 +100,9 @@
                         </div>
                     </div>
                     <div class="chart-card">
-                        <h3><span class="icon">📍</span> Equipment by Location <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">(click bar to view details)</span></h3>
+                        <h3><span class="icon">📍</span> Equipment by Location <span
+                                style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">(click bar to view
+                                details)</span></h3>
                         <div class="chart-container">
                             <canvas id="chart-by-location"></canvas>
                         </div>
@@ -110,13 +116,20 @@
                         <table class="data-table" id="recent-table">
                             <thead>
                                 <tr>
-                                    <th>No.</th>
-                                    <th>Procurement Title</th>
-                                    <th>Type</th>
-                                    <th>Brand / Model</th>
                                     <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Date Added</th>
+                                    <th>Indicator</th>
+                                    <th>Procurement Title</th>
+                                    <th>Supplier</th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Model</th>
+                                    <th>Property No.</th>
+                                    <th>Serial No.</th>
+                                    <th>Acquisition Date</th>
+                                    <th>Cost</th>
+                                    <th>Accountable</th>
+                                    <th>Used By</th>
+                                    <th>Warranty</th>
                                 </tr>
                             </thead>
                             <tbody id="recent-tbody">
@@ -140,13 +153,16 @@
                             <span class="search-icon">🔍</span>
                             <input type="text" id="equipment-search" class="form-input" placeholder="Quick search...">
                         </div>
-                        <input type="text" class="filter-select" id="filter-type" list="list-types" placeholder="All Types">
+                        <input type="text" class="filter-select" id="filter-type" list="list-types"
+                            placeholder="All Types">
                         <datalist id="list-types"></datalist>
 
-                        <input type="text" class="filter-select" id="filter-location" list="list-locations" placeholder="All Locations">
+                        <input type="text" class="filter-select" id="filter-location" list="list-locations"
+                            placeholder="All Locations">
                         <datalist id="list-locations"></datalist>
 
-                        <input type="text" class="filter-select" id="filter-status" list="list-statuses" placeholder="All Status">
+                        <input type="text" class="filter-select" id="filter-status" list="list-statuses"
+                            placeholder="All Status">
                         <datalist id="list-statuses">
                             <option value="serviceable">Serviceable</option>
                             <option value="unserviceable">Unserviceable</option>
@@ -172,52 +188,62 @@
                     <div class="filters-grid">
                         <div class="filter-group">
                             <label for="filter-indicator">Indicator</label>
-                            <input type="text" class="form-input" id="filter-indicator" list="list-indicators" placeholder="Search indicator...">
+                            <input type="text" class="form-input" id="filter-indicator" list="list-indicators"
+                                placeholder="Search indicator...">
                             <datalist id="list-indicators"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-procurement-title">Procurement Title</label>
-                            <input type="text" class="form-input" id="filter-procurement-title" list="list-titles" placeholder="Search title...">
+                            <input type="text" class="form-input" id="filter-procurement-title" list="list-titles"
+                                placeholder="Search title...">
                             <datalist id="list-titles"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-supplier">Supplier</label>
-                            <input type="text" class="form-input" id="filter-supplier" list="list-suppliers" placeholder="Search supplier...">
+                            <input type="text" class="form-input" id="filter-supplier" list="list-suppliers"
+                                placeholder="Search supplier...">
                             <datalist id="list-suppliers"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-brand">Brand</label>
-                            <input type="text" class="form-input" id="filter-brand" list="list-brands" placeholder="Search brand...">
+                            <input type="text" class="form-input" id="filter-brand" list="list-brands"
+                                placeholder="Search brand...">
                             <datalist id="list-brands"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-model">Model</label>
-                            <input type="text" class="form-input" id="filter-model" list="list-models" placeholder="Search model...">
+                            <input type="text" class="form-input" id="filter-model" list="list-models"
+                                placeholder="Search model...">
                             <datalist id="list-models"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-property-number">Property Number</label>
-                            <input type="text" class="form-input" id="filter-property-number" list="list-prop-nos" placeholder="Search property #...">
+                            <input type="text" class="form-input" id="filter-property-number" list="list-prop-nos"
+                                placeholder="Search property #...">
                             <datalist id="list-prop-nos"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-serial-number">Serial Number</label>
-                            <input type="text" class="form-input" id="filter-serial-number" list="list-serial-nos" placeholder="Search serial #...">
+                            <input type="text" class="form-input" id="filter-serial-number" list="list-serial-nos"
+                                placeholder="Search serial #...">
                             <datalist id="list-serial-nos"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-person-accountable">Person Accountable</label>
-                            <input type="text" class="form-input" id="filter-person-accountable" list="list-persons" placeholder="Search person...">
+                            <input type="text" class="form-input" id="filter-person-accountable" list="list-persons"
+                                placeholder="Search person...">
                             <datalist id="list-persons"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-used-by">Used By</label>
-                            <input type="text" class="form-input" id="filter-used-by" list="list-users" placeholder="Search user...">
+                            <input type="text" class="form-input" id="filter-used-by" list="list-users"
+                                placeholder="Search user...">
                             <datalist id="list-users"></datalist>
                         </div>
                         <div class="filter-group">
                             <label for="filter-position">Position</label>
-                            <input type="text" class="form-input" id="filter-position" list="list-positions" placeholder="Search position...">
+                            <input type="text" class="form-input" id="filter-position" list="list-positions"
+                                placeholder="Search position...">
                             <datalist id="list-positions"></datalist>
                         </div>
                         <div class="filter-group">
@@ -235,6 +261,30 @@
                         <div class="filter-group">
                             <label for="filter-description">Description</label>
                             <input type="text" class="form-input" id="filter-description" placeholder="Keywords...">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-warranty">Warranty</label>
+                            <select class="form-input" id="filter-warranty">
+                                <option value="">All</option>
+                                <option value="yes">With Warranty</option>
+                                <option value="no">Without Warranty</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-ups">UPS</label>
+                            <select class="form-input" id="filter-ups">
+                                <option value="">All</option>
+                                <option value="yes">With UPS</option>
+                                <option value="no">Without UPS</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-antivirus">Antivirus Installed</label>
+                            <select class="form-input" id="filter-antivirus">
+                                <option value="">All</option>
+                                <option value="yes">With Antivirus</option>
+                                <option value="no">Without Antivirus</option>
+                            </select>
                         </div>
                     </div>
                     <div class="filters-actions">
@@ -254,7 +304,8 @@
                 <!-- Global Select All Banner -->
                 <div class="global-select-bar" id="global-select-bar">
                     <span class="global-select-msg" id="global-select-msg"></span>
-                    <button class="global-select-link" id="btn-select-all-db">Select all equipment in the system</button>
+                    <button class="global-select-link" id="btn-select-all-db">Select all equipment in the
+                        system</button>
                     <span class="global-select-sep">·</span>
                     <button class="global-select-link" id="btn-cancel-global-select">Clear selection</button>
                 </div>
@@ -265,16 +316,22 @@
                         <table class="data-table" id="equipment-table">
                             <thead>
                                 <tr>
-                                    <th style="width:40px;"><input type="checkbox" class="row-checkbox" id="select-all"></th>
-                                    <th>No.</th>
+                                    <th style="width:40px;"><input type="checkbox" class="row-checkbox" id="select-all">
+                                    </th>
+                                    <th>Location</th>
+                                    <th>Indicator</th>
                                     <th>Procurement Title</th>
+                                    <th>Supplier</th>
                                     <th>Type</th>
                                     <th>Brand</th>
                                     <th>Model</th>
+                                    <th>Property No.</th>
                                     <th>Serial No.</th>
-                                    <th>Location</th>
-                                    <th>Person Accountable</th>
-                                    <th>Status</th>
+                                    <th>Acquisition Date</th>
+                                    <th>Cost</th>
+                                    <th>Accountable</th>
+                                    <th>Used By</th>
+                                    <th>Warranty</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -296,15 +353,16 @@
                     <p>Generate and download inventory reports</p>
                 </div>
 
-                <div class="report-config">
-                    <!-- Left: Format & Filters -->
+                <div class="report-config" style="grid-template-columns: 1fr;">
                     <div class="report-panel">
                         <h3>📋 Report Settings</h3>
 
                         <!-- Format -->
                         <div class="mb-2">
                             <label class="form-group-inline" style="margin-bottom: 12px;">
-                                <span style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Export Format</span>
+                                <span
+                                    style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Export
+                                    Format</span>
                             </label>
                             <div class="format-options">
                                 <div class="format-option">
@@ -327,11 +385,14 @@
                         <!-- Filters -->
                         <div class="mb-2">
                             <div class="form-group-inline">
-                                <label>Filter by Type</label>
-                                <select class="filter-select" id="report-filter-type" style="width:100%;">
-                                    <option value="">All Types</option>
+                                <label>Filter by Type <span style="color:var(--danger)">*</span></label>
+                                <select class="filter-select" id="report-filter-type" style="width:100%;" required>
+                                    <option value="" disabled selected>— Select Equipment Type —</option>
                                 </select>
                             </div>
+                            <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">
+                                💡 Each equipment type has its own preset column format.
+                            </p>
                         </div>
                         <div class="mb-2">
                             <div class="form-group-inline">
@@ -351,28 +412,92 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>Warranty</label>
+                                <select class="filter-select" id="report-filter-warranty" style="width:100%;">
+                                    <option value="">All</option>
+                                    <option value="yes">With Warranty</option>
+                                    <option value="no">Without Warranty</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>UPS</label>
+                                <select class="filter-select" id="report-filter-ups" style="width:100%;">
+                                    <option value="">All</option>
+                                    <option value="yes">With UPS</option>
+                                    <option value="no">Without UPS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-group-inline">
+                                <label>Antivirus Installed</label>
+                                <select class="filter-select" id="report-filter-antivirus" style="width:100%;">
+                                    <option value="">All</option>
+                                    <option value="yes">With Antivirus</option>
+                                    <option value="no">Without Antivirus</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <button class="btn btn-primary btn-block mt-2" id="btn-generate-report">
                             📥 Generate Report
                         </button>
                     </div>
-
-                    <!-- Right: Column Selection -->
-                    <div class="report-panel">
-                        <h3 class="d-flex justify-between items-center" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>📋 Select Columns</span>
-                            <span>
-                                <button class="btn btn-outline btn-sm" id="btn-select-all-cols" style="margin-right:4px;">Select All</button>
-                                <button class="btn btn-outline btn-sm" id="btn-deselect-all-cols">Deselect All</button>
-                            </span>
-                        </h3>
-                        <div class="column-grid" id="column-grid">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- ==================== TYPE SELECTOR MODAL ==================== -->
+    <div class="modal-overlay" id="type-selector-modal">
+        <div class="modal" style="max-width:720px;">
+            <div class="modal-header">
+                <h2>🖥️ Select Equipment Type</h2>
+                <button class="modal-close" id="type-selector-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">Choose the type of equipment
+                    you want to add. The condition checklist will be tailored accordingly.</p>
+                <div class="type-selector-grid" id="type-selector-grid">
+                    <button class="type-card" data-type="Desktop PC">
+                        <span class="type-card-icon">🖥️</span>
+                        <span class="type-card-label">Desktop PC</span>
+                    </button>
+                    <button class="type-card" data-type="Laptop">
+                        <span class="type-card-icon">💻</span>
+                        <span class="type-card-label">Laptop</span>
+                    </button>
+                    <button class="type-card" data-type="Tablet">
+                        <span class="type-card-icon">📱</span>
+                        <span class="type-card-label">Tablet</span>
+                    </button>
+                    <button class="type-card" data-type="Printer">
+                        <span class="type-card-icon">🖨️</span>
+                        <span class="type-card-label">Printer</span>
+                    </button>
+                    <button class="type-card" data-type="Document Scanner">
+                        <span class="type-card-icon">🗂️</span>
+                        <span class="type-card-label">Document Scanner</span>
+                    </button>
+                    <button class="type-card" data-type="LCD Projector">
+                        <span class="type-card-icon">📽️</span>
+                        <span class="type-card-label">LCD Projector</span>
+                    </button>
+                    <button class="type-card" data-type="Monitor">
+                        <span class="type-card-icon">🖵</span>
+                        <span class="type-card-label">Monitor</span>
+                    </button>
+                    <button class="type-card" data-type="Other ICT Supplies">
+                        <span class="type-card-icon">📦</span>
+                        <span class="type-card-label">Other ICT Supplies</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ==================== ADD/EDIT EQUIPMENT MODAL ==================== -->
@@ -396,7 +521,8 @@
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-procurement-title">Procurement Title</label>
-                                <input type="text" id="eq-procurement-title" class="form-input" placeholder="e.g. Desktop Computer Unit">
+                                <input type="text" id="eq-procurement-title" class="form-input"
+                                    placeholder="e.g. Desktop Computer Unit">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-supplier">Supplier</label>
@@ -406,7 +532,8 @@
                         <div class="form-row form-row-3">
                             <div class="form-group-inline">
                                 <label for="eq-type">Type of Equipment</label>
-                                <input type="text" id="eq-type" class="form-input" placeholder="e.g. Desktop, Laptop, Printer">
+                                <input type="text" id="eq-type" class="form-input"
+                                    placeholder="e.g. Desktop, Laptop, Printer">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-brand">Brand</label>
@@ -424,11 +551,13 @@
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-property-number">Property Number</label>
-                                <input type="text" id="eq-property-number" class="form-input" placeholder="e.g. PROP-2024-001">
+                                <input type="text" id="eq-property-number" class="form-input"
+                                    placeholder="e.g. PROP-2024-001">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-serial-number">Serial Number</label>
-                                <input type="text" id="eq-serial-number" class="form-input" placeholder="e.g. SN-DELL-7080-001">
+                                <input type="text" id="eq-serial-number" class="form-input"
+                                    placeholder="e.g. SN-DELL-7080-001">
                             </div>
                         </div>
                         <div class="form-row form-row-3">
@@ -438,7 +567,8 @@
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-cost">Cost (₱)</label>
-                                <input type="number" id="eq-cost" class="form-input" placeholder="0.00" step="0.01" min="0">
+                                <input type="number" id="eq-cost" class="form-input" placeholder="0.00" step="0.01"
+                                    min="0">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-inventory-date">Inventory Date</label>
@@ -447,7 +577,8 @@
                         </div>
                         <div class="form-group-inline">
                             <label for="eq-description">Description</label>
-                            <textarea id="eq-description" class="form-input" placeholder="Enter equipment description..."></textarea>
+                            <textarea id="eq-description" class="form-input"
+                                placeholder="Enter equipment description..."></textarea>
                         </div>
                     </div>
 
@@ -457,11 +588,13 @@
                         <div class="form-row form-row-4">
                             <div class="form-group-inline">
                                 <label for="eq-person-accountable">Person Accountable</label>
-                                <input type="text" id="eq-person-accountable" class="form-input" placeholder="Full Name">
+                                <input type="text" id="eq-person-accountable" class="form-input"
+                                    placeholder="Full Name">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-person-position">Position</label>
-                                <input type="text" id="eq-person-position" class="form-input" placeholder="e.g. IT Officer III">
+                                <input type="text" id="eq-person-position" class="form-input"
+                                    placeholder="e.g. IT Officer III">
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-used-by">Used By</label>
@@ -469,71 +602,17 @@
                             </div>
                             <div class="form-group-inline">
                                 <label for="eq-used-by-position">Position</label>
-                                <input type="text" id="eq-used-by-position" class="form-input" placeholder="e.g. Admin Aide IV">
+                                <input type="text" id="eq-used-by-position" class="form-input"
+                                    placeholder="e.g. Admin Aide IV">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section: Condition Checklist (Yes/No) -->
+                    <!-- Section: Condition Checklist (Yes/No) — dynamically rendered per equipment type -->
                     <div class="form-section">
                         <div class="form-section-title">✅ Condition Checklist</div>
-                        <div class="toggle-grid">
-                            <div class="toggle-item">
-                                <span>With Warranty</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-with-warranty">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Clear Monitor</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-clear-monitor">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Active CMOS Battery</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-active-cmos-battery">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Charging UPS</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-charging-ups">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Working I/O Ports & Connections</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-working-io-ports">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Updated/Patched OS</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-updated-patched-os">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Weekly Scan Antivirus</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-weekly-scan-antivirus">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Working Keyboard & Mouse</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="eq-working-keyboard-mouse">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
+                        <div class="toggle-grid" id="checklist-toggles">
+                            <!-- Populated by JS based on equipment type -->
                         </div>
                     </div>
 
@@ -542,7 +621,8 @@
                         <div class="form-section-title">🔘 Equipment Status</div>
                         <div class="radio-group">
                             <div class="radio-option">
-                                <input type="radio" name="eq-status" id="eq-status-serviceable" value="serviceable" checked>
+                                <input type="radio" name="eq-status" id="eq-status-serviceable" value="serviceable"
+                                    checked>
                                 <label for="eq-status-serviceable">✅ Serviceable</label>
                             </div>
                             <div class="radio-option unserviceable">
@@ -557,7 +637,8 @@
                         <div class="form-section-title">📝 Additional Information</div>
                         <div class="form-group-inline">
                             <label for="eq-remarks">Remarks / Recommendation</label>
-                            <textarea id="eq-remarks" class="form-input" placeholder="Enter remarks or recommendations..."></textarea>
+                            <textarea id="eq-remarks" class="form-input"
+                                placeholder="Enter remarks or recommendations..."></textarea>
                         </div>
                     </div>
 
@@ -565,7 +646,8 @@
                     <div class="form-section" id="repair-history-section">
                         <div class="form-section-title">🔧 Repair History (Maintenance Request Forms)</div>
                         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
-                            Upload scanned copies of Maintenance Request Forms as basis for repair history. Accepted: PDF, JPG, PNG.
+                            Upload scanned copies of Maintenance Request Forms as basis for repair history. Accepted:
+                            PDF, JPG, PNG.
                         </p>
 
                         <!-- Only visible when editing (equipment already saved) -->
@@ -574,7 +656,8 @@
                                 <div class="drop-icon">📂</div>
                                 <h4>Drag & drop scanned forms here</h4>
                                 <p>or click to browse — PDF, JPG, PNG</p>
-                                <input type="file" id="repair-file-input" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none;">
+                                <input type="file" id="repair-file-input" accept=".pdf,.jpg,.jpeg,.png" multiple
+                                    style="display:none;">
                             </div>
 
                             <div id="repair-files-list" class="repair-files-list" style="margin-top: 12px;">
@@ -629,7 +712,8 @@
                     <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;">
                 </div>
                 <div id="import-file-info" style="margin-top:16px; display:none;">
-                    <div class="d-flex items-center gap-1" style="display:flex; align-items:center; gap:8px; padding:12px; background:var(--bg-input); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                    <div class="d-flex items-center gap-1"
+                        style="display:flex; align-items:center; gap:8px; padding:12px; background:var(--bg-input); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
                         <span>📄</span>
                         <span id="import-filename" style="flex:1; font-size:0.85rem; color:var(--text-primary);"></span>
                         <button class="btn btn-outline btn-sm" id="import-clear-btn">✕</button>
@@ -655,7 +739,8 @@
 
                 <!-- From (read-only snapshot) -->
                 <div class="form-section">
-                    <div class="form-section-title" style="color:var(--text-muted);">📤 Current Accountability (From)</div>
+                    <div class="form-section-title" style="color:var(--text-muted);">📤 Current Accountability (From)
+                    </div>
                     <div class="form-row">
                         <div class="form-group-inline">
                             <label>Person Accountable</label>
@@ -663,7 +748,8 @@
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
-                            <input type="text" id="transfer-from-pa-pos" class="form-input" readonly style="opacity:0.6;">
+                            <input type="text" id="transfer-from-pa-pos" class="form-input" readonly
+                                style="opacity:0.6;">
                         </div>
                     </div>
                     <div class="form-row">
@@ -673,7 +759,8 @@
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
-                            <input type="text" id="transfer-from-ub-pos" class="form-input" readonly style="opacity:0.6;">
+                            <input type="text" id="transfer-from-ub-pos" class="form-input" readonly
+                                style="opacity:0.6;">
                         </div>
                     </div>
                     <div class="form-group-inline">
@@ -684,21 +771,25 @@
 
                 <!-- To (editable) -->
                 <div class="form-section">
-                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)</div>
+                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)
+                    </div>
                     <div class="form-row">
                         <div class="form-group-inline">
                             <label>New Person Accountable <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="transfer-to-pa" class="form-input" placeholder="Full name of new accountable person">
+                            <input type="text" id="transfer-to-pa" class="form-input"
+                                placeholder="Full name of new accountable person">
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
-                            <input type="text" id="transfer-to-pa-pos" class="form-input" placeholder="e.g. IT Officer III">
+                            <input type="text" id="transfer-to-pa-pos" class="form-input"
+                                placeholder="e.g. IT Officer III">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group-inline">
                             <label>New Used By</label>
-                            <input type="text" id="transfer-to-ub" class="form-input" placeholder="Who will physically use it">
+                            <input type="text" id="transfer-to-ub" class="form-input"
+                                placeholder="Who will physically use it">
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
@@ -707,7 +798,8 @@
                     </div>
                     <div class="form-group-inline">
                         <label>New Location</label>
-                        <input type="text" id="transfer-to-loc" class="form-input" placeholder="e.g. CAFO, ANFO (leave blank to keep same)">
+                        <input type="text" id="transfer-to-loc" class="form-input"
+                            placeholder="e.g. CAFO, ANFO (leave blank to keep same)">
                     </div>
                 </div>
 
@@ -721,12 +813,14 @@
                         </div>
                         <div class="form-group-inline">
                             <label>Reason for Transfer <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="transfer-reason" class="form-input" placeholder="e.g. Promoted, Field transfer, Retired">
+                            <input type="text" id="transfer-reason" class="form-input"
+                                placeholder="e.g. Promoted, Field transfer, Retired">
                         </div>
                     </div>
                     <div class="form-group-inline">
                         <label>Notes / Remarks</label>
-                        <textarea id="transfer-notes" class="form-input" rows="2" placeholder="Optional additional remarks..."></textarea>
+                        <textarea id="transfer-notes" class="form-input" rows="2"
+                            placeholder="Optional additional remarks..."></textarea>
                     </div>
                 </div>
             </div>
@@ -746,11 +840,13 @@
             </div>
             <div class="modal-body">
                 <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
-                    Reassign <strong id="bulk-transfer-count" style="color:var(--accent-primary);">0</strong> selected equipment to a new person accountable.
+                    Reassign <strong id="bulk-transfer-count" style="color:var(--accent-primary);">0</strong> selected
+                    equipment to a new person accountable.
                 </p>
 
                 <div class="form-section">
-                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)</div>
+                    <div class="form-section-title" style="color:var(--accent-primary);">📥 New Accountability (To)
+                    </div>
                     <div class="form-row">
                         <div class="form-group-inline">
                             <label>New Person Accountable <span style="color:var(--danger)">*</span></label>
@@ -758,13 +854,15 @@
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
-                            <input type="text" id="bulk-transfer-to-pa-pos" class="form-input" placeholder="e.g. Division Chief">
+                            <input type="text" id="bulk-transfer-to-pa-pos" class="form-input"
+                                placeholder="e.g. Division Chief">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group-inline">
                             <label>New Used By</label>
-                            <input type="text" id="bulk-transfer-to-ub" class="form-input" placeholder="Who will use it">
+                            <input type="text" id="bulk-transfer-to-ub" class="form-input"
+                                placeholder="Who will use it">
                         </div>
                         <div class="form-group-inline">
                             <label>Position</label>
@@ -772,8 +870,10 @@
                         </div>
                     </div>
                     <div class="form-group-inline">
-                        <label>New Location <span style="font-size:0.8rem; color:var(--text-muted);">(leave blank to keep each item's current location)</span></label>
-                        <input type="text" id="bulk-transfer-to-loc" class="form-input" placeholder="e.g. CAFO (optional)">
+                        <label>New Location <span style="font-size:0.8rem; color:var(--text-muted);">(leave blank to
+                                keep each item's current location)</span></label>
+                        <input type="text" id="bulk-transfer-to-loc" class="form-input"
+                            placeholder="e.g. CAFO (optional)">
                     </div>
                 </div>
 
@@ -786,12 +886,14 @@
                         </div>
                         <div class="form-group-inline">
                             <label>Reason <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="bulk-transfer-reason" class="form-input" placeholder="e.g. Promoted, Retired, Field transfer">
+                            <input type="text" id="bulk-transfer-reason" class="form-input"
+                                placeholder="e.g. Promoted, Retired, Field transfer">
                         </div>
                     </div>
                     <div class="form-group-inline">
                         <label>Notes / Remarks</label>
-                        <textarea id="bulk-transfer-notes" class="form-input" rows="2" placeholder="Optional remarks..."></textarea>
+                        <textarea id="bulk-transfer-notes" class="form-input" rows="2"
+                            placeholder="Optional remarks..."></textarea>
                     </div>
                 </div>
             </div>
@@ -855,4 +957,5 @@
     <script src="/static/js/equipment.js"></script>
     <script src="/static/js/reports.js"></script>
 </body>
+
 </html>

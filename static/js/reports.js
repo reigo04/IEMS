@@ -2,40 +2,8 @@
    IEMS — Reports Tab (CSV / PDF Generation)
    ============================================ */
 
-let reportColumnsLoaded = false;
-
 async function loadReportFilters() {
     loadFilterOptions();
-    if (!reportColumnsLoaded) {
-        await loadReportColumns();
-        reportColumnsLoaded = true;
-    }
-}
-
-async function loadReportColumns() {
-    try {
-        const res = await api('/api/reports/columns');
-        const columns = await res.json();
-        const grid = document.getElementById('column-grid');
-        if (!grid) return;
-
-        grid.innerHTML = '';
-        Object.entries(columns).forEach(([key, label]) => {
-            grid.innerHTML += `
-                <label class="column-check">
-                    <input type="checkbox" value="${key}" checked>
-                    <span>${label}</span>
-                </label>
-            `;
-        });
-    } catch (err) {
-        console.error('Failed to load report columns:', err);
-    }
-}
-
-function getSelectedColumns() {
-    const checkboxes = document.querySelectorAll('#column-grid input[type="checkbox"]:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
 }
 
 async function generateReport() {
@@ -43,13 +11,14 @@ async function generateReport() {
     const filterType = document.getElementById('report-filter-type')?.value || '';
     const filterLocation = document.getElementById('report-filter-location')?.value || '';
     const filterStatus = document.getElementById('report-filter-status')?.value || '';
-    const columns = getSelectedColumns();
+    const filterWarranty = document.getElementById('report-filter-warranty')?.value || '';
+    const filterUps = document.getElementById('report-filter-ups')?.value || '';
+    const filterAntivirus = document.getElementById('report-filter-antivirus')?.value || '';
 
-    if (columns.length === 0) {
-        showToast('Please select at least one column', 'error');
+    if (!filterType) {
+        showToast('Please select an equipment type before generating a report', 'error');
         return;
     }
-
     const btn = document.getElementById('btn-generate-report');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Generating...';
@@ -63,7 +32,9 @@ async function generateReport() {
                 filter_type: filterType,
                 filter_location: filterLocation,
                 filter_status: filterStatus,
-                columns
+                filter_warranty: filterWarranty,
+                filter_ups: filterUps,
+                filter_antivirus: filterAntivirus,
             })
         });
 
@@ -99,12 +70,4 @@ async function generateReport() {
 // ── Event Listeners ──
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-generate-report')?.addEventListener('click', generateReport);
-
-    document.getElementById('btn-select-all-cols')?.addEventListener('click', () => {
-        document.querySelectorAll('#column-grid input[type="checkbox"]').forEach(cb => cb.checked = true);
-    });
-
-    document.getElementById('btn-deselect-all-cols')?.addEventListener('click', () => {
-        document.querySelectorAll('#column-grid input[type="checkbox"]').forEach(cb => cb.checked = false);
-    });
 });

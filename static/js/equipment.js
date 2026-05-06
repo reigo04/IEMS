@@ -10,6 +10,107 @@ let searchTimeout = null;
 let currentViewId = null;
 let globalSelectActive = false; // tracks if all-in-DB are selected
 
+// ── Equipment Type → Condition Checklist Config ──
+const CHECKLIST_CONFIG = {
+    'Desktop PC': [
+        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'charging_ups',          label: 'With UPS?' },
+        { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
+        { key: 'working_keyboard_mouse',label: 'Working Mouse & Keyboard?' },
+        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
+        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
+        { key: 'active_cmos_battery',   label: 'Active CMOS Battery?' },
+    ],
+    'Laptop': [
+        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
+        { key: 'working_keyboard_mouse',label: 'Working Trackpad & Keyboard?' },
+        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
+        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
+        { key: 'working_speakers',      label: 'Working Speakers?' },
+    ],
+    'Tablet': [
+        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
+        { key: 'working_keyboard_mouse',label: 'Working Trackpad & Keyboard?' },
+        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
+        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
+        { key: 'working_speakers',      label: 'Working Speakers?' },
+    ],
+    'Printer': [
+        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'ink_level_ok',          label: 'Ink Level Above 50% Capacity?' },
+        { key: 'printing_black',        label: 'Printing Black Color?' },
+        { key: 'printing_cyan',         label: 'Printing Cyan Color?' },
+        { key: 'printing_magenta',      label: 'Printing Magenta Color?' },
+        { key: 'printing_yellow',       label: 'Printing Yellow Color?' },
+        { key: 'working_pickup_roller', label: 'Working Pick-up Roller?' },
+        { key: 'ink_wastepad_ok',       label: 'Ink Wastepad Cleaned/Replaced?' },
+    ],
+    'Document Scanner': [
+        { key: 'with_warranty',             label: 'With Warranty?' },
+        { key: 'working_adf',               label: 'Working ADF?' },
+        { key: 'working_buttons',           label: 'Working Buttons?' },
+        { key: 'working_pickup_roller',     label: 'Working Pick-up Roller?' },
+        { key: 'working_separation_roller', label: 'Working Separation Roller?' },
+    ],
+    'LCD Projector': [
+        { key: 'with_warranty',    label: 'With Warranty?' },
+        { key: 'laser_source',     label: 'Laser Source?' },
+        { key: 'bulb_source',      label: 'Bulb Source?' },
+        { key: 'working_buttons',  label: 'Working Buttons & I/O Ports?' },
+        { key: 'clear_projection', label: 'With Clear Projection/Output?' },
+    ],
+    'Monitor': [
+        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'charging_ups',          label: 'With UPS?' },
+        { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
+        { key: 'working_keyboard_mouse',label: 'Working Mouse & Keyboard?' },
+        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
+        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
+        { key: 'active_cmos_battery',   label: 'Active CMOS Battery?' },
+    ],
+    'Other ICT Supplies': [
+        { key: 'with_warranty',           label: 'With Warranty?' },
+        { key: 'working_buttons',         label: 'Working Buttons?' },
+        { key: 'working_io_ports',        label: 'I/O Connections?' },
+        { key: 'clear_monitor',           label: 'Clear Monitor? (Selected Equipment)' },
+        { key: 'good_physical_condition', label: 'Good Physical Condition?' },
+        { key: 'functional_for_use',      label: 'Functional For Use?' },
+    ],
+};
+
+function getChecklistItems(type) {
+    return CHECKLIST_CONFIG[type] || CHECKLIST_CONFIG['Desktop PC'];
+}
+
+function renderChecklist(type) {
+    const container = document.getElementById('checklist-toggles');
+    if (!container) return;
+    container.innerHTML = getChecklistItems(type).map(item => `
+        <div class="toggle-item">
+            <span>${item.label}</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="eq-${item.key}" data-field="${item.key}">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    `).join('');
+}
+
+// ── Type Selector Modal ──
+function openTypeSelectorModal() {
+    document.getElementById('type-selector-modal').classList.add('active');
+}
+
+function closeTypeSelectorModal() {
+    document.getElementById('type-selector-modal').classList.remove('active');
+}
+
 // ── Load Equipment List ──
 async function loadEquipment(page = 1) {
     currentPage = page;
@@ -33,12 +134,16 @@ async function loadEquipment(page = 1) {
     const inventory_date = document.getElementById('filter-inventory-date')?.value || '';
     const cost = document.getElementById('filter-cost')?.value || '';
     const description = document.getElementById('filter-description')?.value || '';
+    const warranty = document.getElementById('filter-warranty')?.value || '';
+    const ups = document.getElementById('filter-ups')?.value || '';
+    const antivirus = document.getElementById('filter-antivirus')?.value || '';
 
     const params = new URLSearchParams({
         page, per_page: 25, search, type, location, status,
         indicator, procurement_title, supplier, brand, model,
         property_number, serial_number, person_accountable, used_by,
-        position, acquisition_date, inventory_date, cost, description
+        position, acquisition_date, inventory_date, cost, description,
+        warranty, ups, antivirus
     });
 
     try {
@@ -61,7 +166,7 @@ function renderEquipmentTable(data) {
     if (data.items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11">
+                <td colspan="16">
                     <div class="empty-state">
                         <div class="empty-icon">📦</div>
                         <h3>No equipment found</h3>
@@ -79,15 +184,20 @@ function renderEquipmentTable(data) {
                 <input type="checkbox" class="row-checkbox row-select"
                        data-id="${item.id}" ${selectedIds.has(item.id) ? 'checked' : ''}>
             </td>
-            <td>${item.id}</td>
+            <td>${item.location || '-'}</td>
+            <td>${item.indicator || '-'}</td>
             <td class="truncate" style="max-width:180px;" title="${item.procurement_title}">${item.procurement_title}</td>
+            <td>${item.supplier || '-'}</td>
             <td>${item.type_of_equipment}</td>
             <td>${item.brand}</td>
             <td>${item.model}</td>
+            <td>${item.property_number || '-'}</td>
             <td style="font-family:monospace; font-size:0.8rem;">${item.serial_number}</td>
-            <td>${item.location}</td>
+            <td>${item.acquisition_date || '-'}</td>
+            <td>${item.cost ? '₱' + item.cost.toLocaleString() : '-'}</td>
             <td>${item.person_accountable}</td>
-            <td>${statusBadge(item.status)}</td>
+            <td>${item.used_by || '-'}</td>
+            <td><span class="badge ${item.with_warranty ? 'badge-yes' : 'badge-no'}">${item.with_warranty ? 'Yes' : 'No'}</span></td>
             <td>
                 <div class="action-btns">
                     <button onclick="viewEquipment(${item.id})" title="View" class="view-btn">👁️</button>
@@ -222,18 +332,19 @@ async function loadFilterOptions() {
         populateDatalist('list-users', data.used_bys);
         populateDatalist('list-positions', data.positions);
 
-        populateSelect('report-filter-type', data.types, 'All Types');
+        populateSelect('report-filter-type', data.types, '— Select Equipment Type —', true);
         populateSelect('report-filter-location', data.locations, 'All Locations');
     } catch (err) {
         console.error('Failed to load filters:', err);
     }
 }
 
-function populateSelect(id, options, defaultText) {
+function populateSelect(id, options, defaultText, disableDefault = false) {
     const select = document.getElementById(id);
     if (!select) return;
     const currentVal = select.value;
-    select.innerHTML = `<option value="">${defaultText}</option>`;
+    const disabledAttr = disableDefault ? ' disabled selected' : '';
+    select.innerHTML = `<option value=""${disabledAttr}>${defaultText}</option>`;
     options.forEach(opt => {
         const option = document.createElement('option');
         option.value = opt;
@@ -272,6 +383,9 @@ function resetForm() {
     editingId = null;
     // Reset radio to serviceable
     document.getElementById('eq-status-serviceable').checked = true;
+    // Clear dynamic checklist
+    const checklistEl = document.getElementById('checklist-toggles');
+    if (checklistEl) checklistEl.innerHTML = '';
     // Reset repair file area
     document.getElementById('repair-upload-area').style.display = 'none';
     document.getElementById('repair-save-first-notice').style.display = 'flex';
@@ -279,6 +393,12 @@ function resetForm() {
 }
 
 function getFormData() {
+    // Collect checklist values dynamically from rendered toggles
+    const conditions = {};
+    document.querySelectorAll('#checklist-toggles input[type="checkbox"]').forEach(cb => {
+        if (cb.dataset.field) conditions[cb.dataset.field] = cb.checked;
+    });
+
     return {
         indicator: document.getElementById('eq-indicator').value,
         procurement_title: document.getElementById('eq-procurement-title').value,
@@ -299,15 +419,7 @@ function getFormData() {
         inventory_date: document.getElementById('eq-inventory-date').value,
         remarks_recommendation: document.getElementById('eq-remarks').value,
         status: document.querySelector('input[name="eq-status"]:checked')?.value || 'serviceable',
-        // Boolean fields
-        with_warranty: document.getElementById('eq-with-warranty').checked,
-        clear_monitor: document.getElementById('eq-clear-monitor').checked,
-        active_cmos_battery: document.getElementById('eq-active-cmos-battery').checked,
-        charging_ups: document.getElementById('eq-charging-ups').checked,
-        working_io_ports: document.getElementById('eq-working-io-ports').checked,
-        updated_patched_os: document.getElementById('eq-updated-patched-os').checked,
-        weekly_scan_antivirus: document.getElementById('eq-weekly-scan-antivirus').checked,
-        working_keyboard_mouse: document.getElementById('eq-working-keyboard-mouse').checked,
+        ...conditions,
     };
 }
 
@@ -339,15 +451,12 @@ function populateForm(item) {
         document.getElementById('eq-status-serviceable').checked = true;
     }
 
-    // Boolean toggles
-    document.getElementById('eq-with-warranty').checked = item.with_warranty;
-    document.getElementById('eq-clear-monitor').checked = item.clear_monitor;
-    document.getElementById('eq-active-cmos-battery').checked = item.active_cmos_battery;
-    document.getElementById('eq-charging-ups').checked = item.charging_ups;
-    document.getElementById('eq-working-io-ports').checked = item.working_io_ports;
-    document.getElementById('eq-updated-patched-os').checked = item.updated_patched_os;
-    document.getElementById('eq-weekly-scan-antivirus').checked = item.weekly_scan_antivirus;
-    document.getElementById('eq-working-keyboard-mouse').checked = item.working_keyboard_mouse;
+    // Render type-specific checklist then populate values
+    renderChecklist(item.type_of_equipment);
+    document.querySelectorAll('#checklist-toggles input[type="checkbox"]').forEach(cb => {
+        const field = cb.dataset.field;
+        if (field && item[field] !== undefined) cb.checked = !!item[field];
+    });
 
     // Show repair file upload area (equipment already saved)
     document.getElementById('repair-upload-area').style.display = 'block';
@@ -589,14 +698,9 @@ function renderViewModal(item) {
             <div class="view-section">
                 <div class="view-section-title">✅ Condition Checklist</div>
                 <div class="view-checklist">
-                    <div class="view-check-item"><span>With Warranty</span>${boolBadge(item.with_warranty)}</div>
-                    <div class="view-check-item"><span>Clear Monitor</span>${boolBadge(item.clear_monitor)}</div>
-                    <div class="view-check-item"><span>Active CMOS Battery</span>${boolBadge(item.active_cmos_battery)}</div>
-                    <div class="view-check-item"><span>Charging UPS</span>${boolBadge(item.charging_ups)}</div>
-                    <div class="view-check-item"><span>Working I/O Ports</span>${boolBadge(item.working_io_ports)}</div>
-                    <div class="view-check-item"><span>Updated/Patched OS</span>${boolBadge(item.updated_patched_os)}</div>
-                    <div class="view-check-item"><span>Weekly Scan Antivirus</span>${boolBadge(item.weekly_scan_antivirus)}</div>
-                    <div class="view-check-item"><span>Working Keyboard & Mouse</span>${boolBadge(item.working_keyboard_mouse)}</div>
+                    ${getChecklistItems(item.type_of_equipment).map(c =>
+                        `<div class="view-check-item"><span>${c.label}</span>${boolBadge(item[c.key])}</div>`
+                    ).join('')}
                 </div>
             </div>
 
@@ -834,11 +938,14 @@ async function selectAllInDatabase() {
     const inventory_date = document.getElementById('filter-inventory-date')?.value || '';
     const cost = document.getElementById('filter-cost')?.value || '';
     const description = document.getElementById('filter-description')?.value || '';
+    const warranty = document.getElementById('filter-warranty')?.value || '';
+    const ups = document.getElementById('filter-ups')?.value || '';
+    const antivirus = document.getElementById('filter-antivirus')?.value || '';
 
     const params = new URLSearchParams({
         search, type, location, status, indicator, procurement_title, supplier, brand, model,
         property_number, serial_number, person_accountable, used_by, position,
-        acquisition_date, inventory_date, cost, description
+        acquisition_date, inventory_date, cost, description, warranty, ups, antivirus
     });
 
     try {
@@ -982,10 +1089,27 @@ async function uploadImport() {
 
 // ── Event Listeners ──
 document.addEventListener('DOMContentLoaded', () => {
-    // Add New button
+    // Add New button → open type selector first
     document.getElementById('btn-add-new')?.addEventListener('click', () => {
         resetForm();
-        openModal('➕ Add New Equipment');
+        openTypeSelectorModal();
+    });
+
+    // Type selector: card clicks
+    document.querySelectorAll('.type-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const type = card.dataset.type;
+            closeTypeSelectorModal();
+            document.getElementById('eq-type').value = type;
+            renderChecklist(type);
+            openModal(`➕ Add New Equipment — ${type}`);
+        });
+    });
+
+    // Type selector: close button & backdrop
+    document.getElementById('type-selector-close')?.addEventListener('click', closeTypeSelectorModal);
+    document.getElementById('type-selector-modal')?.addEventListener('click', e => {
+        if (e.target.id === 'type-selector-modal') closeTypeSelectorModal();
     });
 
     // Modal close/cancel

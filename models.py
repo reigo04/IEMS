@@ -4,6 +4,30 @@ from datetime import datetime, date
 
 db = SQLAlchemy()
 
+# ── Type Normalization (shared with routes.equipment) ──
+_TYPE_DISPLAY_MAP = {
+    'DESKTOP PC': 'Desktop PC',
+    'DOCUMENT SCANNER': 'Document Scanner',
+    'LAPTOP': 'Laptop',
+    'LCD PROJECTOR': 'LCD Projector',
+    'MONITOR': 'Monitor',
+    'PRINTER': 'Printer',
+    'TABLET': 'Tablet',
+}
+
+
+def normalize_equipment_type(raw_type):
+    """Return a canonical display name for an equipment type."""
+    if not raw_type:
+        return ''
+    stripped = raw_type.strip()
+    if stripped.upper().startswith('OIS'):
+        return 'Other ICT Supplies'
+    canonical = _TYPE_DISPLAY_MAP.get(stripped.upper())
+    if canonical:
+        return canonical
+    return stripped.title()
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -48,6 +72,32 @@ class Equipment(db.Model):
     weekly_scan_antivirus = db.Column(db.Boolean, default=False)
     working_keyboard_mouse = db.Column(db.Boolean, default=False)
 
+    # Laptop / Tablet
+    working_speakers = db.Column(db.Boolean, default=False)
+
+    # Printer
+    ink_level_ok = db.Column(db.Boolean, default=False)
+    printing_black = db.Column(db.Boolean, default=False)
+    printing_cyan = db.Column(db.Boolean, default=False)
+    printing_magenta = db.Column(db.Boolean, default=False)
+    printing_yellow = db.Column(db.Boolean, default=False)
+    working_pickup_roller = db.Column(db.Boolean, default=False)
+    ink_wastepad_ok = db.Column(db.Boolean, default=False)
+
+    # Document Scanner
+    working_adf = db.Column(db.Boolean, default=False)
+    working_buttons = db.Column(db.Boolean, default=False)
+    working_separation_roller = db.Column(db.Boolean, default=False)
+
+    # LCD Projector
+    laser_source = db.Column(db.Boolean, default=False)
+    bulb_source = db.Column(db.Boolean, default=False)
+    clear_projection = db.Column(db.Boolean, default=False)
+
+    # Other ICT Supplies
+    good_physical_condition = db.Column(db.Boolean, default=False)
+    functional_for_use = db.Column(db.Boolean, default=False)
+
     remarks_recommendation = db.Column(db.Text, default='')
     inventory_date = db.Column(db.Date, nullable=True)
     repair_history = db.Column(db.Text, default='')
@@ -69,7 +119,7 @@ class Equipment(db.Model):
             'procurement_title': self.procurement_title or '',
             'supplier': self.supplier or '',
             'location': self.location or '',
-            'type_of_equipment': self.type_of_equipment or '',
+            'type_of_equipment': normalize_equipment_type(self.type_of_equipment),
             'brand': self.brand or '',
             'model': self.model or '',
             'property_number': self.property_number or '',
@@ -89,6 +139,22 @@ class Equipment(db.Model):
             'updated_patched_os': self.updated_patched_os,
             'weekly_scan_antivirus': self.weekly_scan_antivirus,
             'working_keyboard_mouse': self.working_keyboard_mouse,
+            'working_speakers': self.working_speakers,
+            'ink_level_ok': self.ink_level_ok,
+            'printing_black': self.printing_black,
+            'printing_cyan': self.printing_cyan,
+            'printing_magenta': self.printing_magenta,
+            'printing_yellow': self.printing_yellow,
+            'working_pickup_roller': self.working_pickup_roller,
+            'ink_wastepad_ok': self.ink_wastepad_ok,
+            'working_adf': self.working_adf,
+            'working_buttons': self.working_buttons,
+            'working_separation_roller': self.working_separation_roller,
+            'laser_source': self.laser_source,
+            'bulb_source': self.bulb_source,
+            'clear_projection': self.clear_projection,
+            'good_physical_condition': self.good_physical_condition,
+            'functional_for_use': self.functional_for_use,
             'remarks_recommendation': self.remarks_recommendation or '',
             'inventory_date': self.inventory_date.isoformat() if self.inventory_date else '',
             'repair_history': self.repair_history or '',

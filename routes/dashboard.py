@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, render_template
 from flask_login import login_required
-from models import db, Equipment
+from models import db, Equipment, normalize_equipment_type
 from sqlalchemy import func
+from collections import defaultdict
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -33,8 +34,16 @@ def chart_by_type():
         func.count(Equipment.id)
     ).group_by(Equipment.type_of_equipment).all()
 
-    labels = [r[0] if r[0] else 'Unspecified' for r in results]
-    values = [r[1] for r in results]
+    # Merge OIS-* types and normalize casing
+    merged = defaultdict(int)
+    for raw_type, count in results:
+        canonical = normalize_equipment_type(raw_type) if raw_type else 'Unspecified'
+        merged[canonical] += count
+
+    # Sort by count descending for a nicer chart
+    sorted_items = sorted(merged.items(), key=lambda x: x[1], reverse=True)
+    labels = [item[0] for item in sorted_items]
+    values = [item[1] for item in sorted_items]
     return jsonify({'labels': labels, 'values': values})
 
 

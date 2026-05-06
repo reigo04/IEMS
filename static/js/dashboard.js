@@ -323,7 +323,7 @@ async function loadRecentEquipment() {
         if (items.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7">
+                    <td colspan="14">
                         <div class="empty-state" style="padding:30px;">
                             <div class="empty-icon">📦</div>
                             <h3>No equipment yet</h3>
@@ -337,13 +337,20 @@ async function loadRecentEquipment() {
 
         tbody.innerHTML = items.map(item => `
             <tr>
-                <td>${item.id}</td>
-                <td>${item.procurement_title}</td>
+                <td>${item.location || '-'}</td>
+                <td>${item.indicator || '-'}</td>
+                <td class="truncate" title="${item.procurement_title}">${item.procurement_title}</td>
+                <td>${item.supplier || '-'}</td>
                 <td>${item.type_of_equipment}</td>
-                <td>${item.brand} ${item.model}</td>
-                <td>${item.location}</td>
-                <td>${statusBadge(item.status)}</td>
-                <td>${formatDate(item.created_at)}</td>
+                <td>${item.brand}</td>
+                <td>${item.model}</td>
+                <td>${item.property_number || '-'}</td>
+                <td style="font-family:monospace; font-size:0.8rem;">${item.serial_number}</td>
+                <td>${item.acquisition_date || '-'}</td>
+                <td>${item.cost ? '₱' + item.cost.toLocaleString() : '-'}</td>
+                <td>${item.person_accountable}</td>
+                <td>${item.used_by || '-'}</td>
+                <td><span class="badge ${item.with_warranty ? 'badge-yes' : 'badge-no'}">${item.with_warranty ? 'Yes' : 'No'}</span></td>
             </tr>
         `).join('');
     } catch (err) {

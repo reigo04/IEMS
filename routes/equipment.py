@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_login import login_required, current_user
-from models import db, Equipment, RepairFile, EquipmentTransfer
+from models import db, Equipment, RepairFile, EquipmentTransfer, normalize_equipment_type
 from datetime import datetime, date
 import openpyxl
 import io
@@ -9,9 +9,24 @@ import uuid
 
 equipment_bp = Blueprint('equipment', __name__)
 
+# Re-export for use by routes.reports
+normalize_type = normalize_equipment_type
+
 BOOL_FIELDS = [
+    # Core / Desktop PC
     'with_warranty', 'clear_monitor', 'active_cmos_battery', 'charging_ups',
-    'working_io_ports', 'updated_patched_os', 'weekly_scan_antivirus', 'working_keyboard_mouse'
+    'working_io_ports', 'updated_patched_os', 'weekly_scan_antivirus', 'working_keyboard_mouse',
+    # Laptop / Tablet
+    'working_speakers',
+    # Printer
+    'ink_level_ok', 'printing_black', 'printing_cyan', 'printing_magenta', 'printing_yellow',
+    'working_pickup_roller', 'ink_wastepad_ok',
+    # Document Scanner
+    'working_adf', 'working_buttons', 'working_separation_roller',
+    # LCD Projector
+    'laser_source', 'bulb_source', 'clear_projection',
+    # Other ICT Supplies / Monitor
+    'good_physical_condition', 'functional_for_use',
 ]
 
 TEXT_FIELDS = [
@@ -125,7 +140,10 @@ def list_equipment():
 
     # Core filters
     if filter_type:
-        query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
+        if filter_type.strip().lower() == 'other ict supplies':
+            query = query.filter(Equipment.type_of_equipment.ilike('OIS%'))
+        else:
+            query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
     if filter_location:
         query = query.filter(Equipment.location.ilike(f'%{filter_location}%'))
     if filter_status:
@@ -175,6 +193,26 @@ def list_equipment():
 
     if f_description:
         query = query.filter(Equipment.description.ilike(f'%{f_description}%'))
+
+    # Boolean filters
+    f_warranty = request.args.get('warranty', '').strip().lower()
+    f_ups = request.args.get('ups', '').strip().lower()
+    f_antivirus = request.args.get('antivirus', '').strip().lower()
+
+    if f_warranty == 'yes':
+        query = query.filter(Equipment.with_warranty == True)
+    elif f_warranty == 'no':
+        query = query.filter(Equipment.with_warranty == False)
+
+    if f_ups == 'yes':
+        query = query.filter(Equipment.charging_ups == True)
+    elif f_ups == 'no':
+        query = query.filter(Equipment.charging_ups == False)
+
+    if f_antivirus == 'yes':
+        query = query.filter(Equipment.weekly_scan_antivirus == True)
+    elif f_antivirus == 'no':
+        query = query.filter(Equipment.weekly_scan_antivirus == False)
 
     query = query.order_by(Equipment.id.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -287,7 +325,10 @@ def get_all_ids():
         )
 
     if filter_type:
-        query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
+        if filter_type.strip().lower() == 'other ict supplies':
+            query = query.filter(Equipment.type_of_equipment.ilike('OIS%'))
+        else:
+            query = query.filter(Equipment.type_of_equipment.ilike(f'%{filter_type}%'))
     if filter_location:
         query = query.filter(Equipment.location.ilike(f'%{filter_location}%'))
     if filter_status:
@@ -330,6 +371,26 @@ def get_all_ids():
             pass
     if f_description:
         query = query.filter(Equipment.description.ilike(f'%{f_description}%'))
+
+    # Boolean filters
+    f_warranty = request.args.get('warranty', '').strip().lower()
+    f_ups = request.args.get('ups', '').strip().lower()
+    f_antivirus = request.args.get('antivirus', '').strip().lower()
+
+    if f_warranty == 'yes':
+        query = query.filter(Equipment.with_warranty == True)
+    elif f_warranty == 'no':
+        query = query.filter(Equipment.with_warranty == False)
+
+    if f_ups == 'yes':
+        query = query.filter(Equipment.charging_ups == True)
+    elif f_ups == 'no':
+        query = query.filter(Equipment.charging_ups == False)
+
+    if f_antivirus == 'yes':
+        query = query.filter(Equipment.weekly_scan_antivirus == True)
+    elif f_antivirus == 'no':
+        query = query.filter(Equipment.weekly_scan_antivirus == False)
 
     ids = [row[0] for row in query.all()]
     return jsonify({'ids': ids, 'total': len(ids)})
@@ -688,6 +749,12 @@ def get_filters():
         vals = db.session.query(column).distinct().all()
         return sorted([v[0] for v in vals if v[0]])
 
+    # Normalize equipment types: merge OIS-* → "Other ICT Supplies", dedup case variants
+    raw_types = db.session.query(Equipment.type_of_equipment).distinct().all()
+    normalized_types = sorted(set(
+        normalize_type(t[0]) for t in raw_types if t[0]
+    ))
+
     # Positions from both fields
     p_positions = db.session.query(Equipment.person_accountable_position).distinct().all()
     u_positions = db.session.query(Equipment.used_by_position).distinct().all()
@@ -696,7 +763,7 @@ def get_filters():
     )))
 
     return jsonify({
-        'types': get_distinct(Equipment.type_of_equipment),
+        'types': normalized_types,
         'locations': get_distinct(Equipment.location),
         'indicators': get_distinct(Equipment.indicator),
         'procurement_titles': get_distinct(Equipment.procurement_title),
