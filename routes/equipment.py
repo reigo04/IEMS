@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from models import db, Equipment, RepairFile, EquipmentTransfer, normalize_equipment_type
 from datetime import datetime, date
 import openpyxl
+import csv
 import io
 import os
 import uuid
@@ -187,7 +188,17 @@ def list_equipment():
 
     if f_cost:
         try:
-            query = query.filter(Equipment.cost == float(f_cost))
+            # Strip commas in case user inputs '50,000'
+            clean_cost = f_cost.replace(',', '')
+            cost_val = float(clean_cost)
+            cost_mode = request.args.get('cost_mode', 'min').strip().lower()
+
+            if cost_mode == 'max':
+                query = query.filter(Equipment.cost <= cost_val)
+            elif cost_mode == 'exact':
+                query = query.filter(Equipment.cost == cost_val)
+            else: # default to min (>=)
+                query = query.filter(Equipment.cost >= cost_val)
         except ValueError:
             pass
 
@@ -366,7 +377,16 @@ def get_all_ids():
             query = query.filter(Equipment.inventory_date == p_date)
     if f_cost:
         try:
-            query = query.filter(Equipment.cost == float(f_cost))
+            clean_cost = f_cost.replace(',', '')
+            cost_val = float(clean_cost)
+            cost_mode = request.args.get('cost_mode', 'min').strip().lower()
+
+            if cost_mode == 'max':
+                query = query.filter(Equipment.cost <= cost_val)
+            elif cost_mode == 'exact':
+                query = query.filter(Equipment.cost == cost_val)
+            else:
+                query = query.filter(Equipment.cost >= cost_val)
         except ValueError:
             pass
     if f_description:
@@ -660,12 +680,24 @@ def import_excel():
         return jsonify({'error': 'No file uploaded'}), 400
 
     file = request.files['file']
-    if not file.filename.endswith(('.xlsx', '.xls')):
-        return jsonify({'error': 'Invalid file type. Please upload an Excel file (.xlsx)'}), 400
+    filename = file.filename.lower()
+    
+    if not filename.endswith(('.xlsx', '.xls', '.csv')):
+        return jsonify({'error': 'Invalid file type. Please upload an Excel (.xlsx) or CSV (.csv) file'}), 400
 
     try:
-        wb = openpyxl.load_workbook(io.BytesIO(file.read()), data_only=True)
-        ws = wb.active
+        rows = []
+        if filename.endswith('.csv'):
+            stream = io.StringIO(file.read().decode('utf-8'), newline='')
+            reader = csv.reader(stream)
+            rows = list(reader)
+        else:
+            wb = openpyxl.load_workbook(io.BytesIO(file.read()), data_only=True)
+            ws = wb.active
+            rows = [list(row) for row in ws.iter_rows(values_only=True)]
+
+        if not rows:
+            return jsonify({'error': 'The uploaded file is empty'}), 400
 
         # Map header row to column indices
         headers = {}
@@ -703,7 +735,7 @@ def import_excel():
             'STATUS': 'status',
         }
 
-        first_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+        first_row = rows[0]
         position_count = 0
         for col_idx, cell_val in enumerate(first_row):
             if cell_val:
@@ -718,8 +750,11 @@ def import_excel():
                     headers[col_idx] = header_map[header_upper]
 
         imported = 0
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            if all(v is None for v in row):
+        updated = 0
+        new_items = []
+        
+        for row in rows[1:]:
+            if all(v is None or str(v).strip() == '' for v in row):
                 continue
 
             data = {}
@@ -729,13 +764,65 @@ def import_excel():
                     if field != 'no':
                         data[field] = cell_val
 
-            eq = Equipment()
-            populate_equipment(eq, data)
-            db.session.add(eq)
-            imported += 1
+            # Match logic: Property Number first, then Serial Number
+            prop_no = str(data.get('property_number', '')).strip() if data.get('property_number') else ''
+            serial_no = str(data.get('serial_number', '')).strip() if data.get('serial_number') else ''
+            
+            existing_eq = None
+            if prop_no and prop_no != '-':
+                existing_eq = Equipment.query.filter(Equipment.property_number == prop_no).first()
+            
+            if not existing_eq and serial_no and serial_no != '-':
+                existing_eq = Equipment.query.filter(Equipment.serial_number == serial_no).first()
+
+            if existing_eq:
+                # Handle automatic transfer history if person_accountable changed
+                new_pa = str(data.get('person_accountable', '')).strip() if data.get('person_accountable') else ''
+                old_pa = existing_eq.person_accountable or ''
+                
+                if new_pa and new_pa.lower() != old_pa.lower():
+                    transfer = EquipmentTransfer(
+                        equipment_id=existing_eq.id,
+                        from_person_accountable=old_pa,
+                        from_person_accountable_position=existing_eq.person_accountable_position or '',
+                        from_used_by=existing_eq.used_by or '',
+                        from_used_by_position=existing_eq.used_by_position or '',
+                        from_location=existing_eq.location or '',
+                        to_person_accountable=new_pa,
+                        to_person_accountable_position=str(data.get('person_accountable_position', '')).strip(),
+                        to_used_by=str(data.get('used_by', '')).strip(),
+                        to_used_by_position=str(data.get('used_by_position', '')).strip(),
+                        to_location=str(data.get('location', '')).strip() or existing_eq.location or '',
+                        transfer_date=datetime.utcnow().date(),
+                        reason='Imported via Annual Inventory',
+                        transferred_by=current_user.username,
+                    )
+                    db.session.add(transfer)
+
+                populate_equipment(existing_eq, data)
+                existing_eq.updated_at = datetime.utcnow()
+                new_items.append(existing_eq)
+                updated += 1
+            else:
+                eq = Equipment()
+                populate_equipment(eq, data)
+                db.session.add(eq)
+                new_items.append(eq)
+                imported += 1
 
         db.session.commit()
-        return jsonify({'message': f'Successfully imported {imported} equipment(s)', 'count': imported})
+        
+        msg = []
+        if imported > 0: msg.append(f"{imported} new")
+        if updated > 0: msg.append(f"{updated} updated")
+        
+        return jsonify({
+            'message': f'Successfully processed: {", ".join(msg)}' if msg else 'No items processed',
+            'count': imported + updated,
+            'new_count': imported,
+            'updated_count': updated,
+            'items': [eq.to_dict() for eq in new_items]
+        })
 
     except Exception as e:
         db.session.rollback()

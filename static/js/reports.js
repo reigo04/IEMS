@@ -67,7 +67,49 @@ async function generateReport() {
     }
 }
 
+// ── Report filter visibility rules by type ──
+// Desktop PC → all three (Warranty, UPS, Antivirus)
+// Laptop      → Warranty + Antivirus only
+// All others  → Warranty only
+
+function updateReportFilterVisibility() {
+    const type = document.getElementById('report-filter-type')?.value || '';
+
+    const upsWrap       = document.getElementById('report-filter-ups-wrap');
+    const antivirusWrap = document.getElementById('report-filter-antivirus-wrap');
+    const upsSelect     = document.getElementById('report-filter-ups');
+    const antivirusSelect = document.getElementById('report-filter-antivirus');
+
+    let showUps = false;
+    let showAntivirus = false;
+
+    if (type === 'Desktop PC') {
+        showUps = true;
+        showAntivirus = true;
+    } else if (type === 'Laptop') {
+        showUps = false;
+        showAntivirus = true;
+    }
+    // All other types (Printer, Document Scanner, LCD Projector,
+    // Monitor, Other ICT Supplies, Tablet): Warranty only — both hidden.
+
+    if (upsWrap) {
+        upsWrap.style.display = showUps ? '' : 'none';
+        if (!showUps && upsSelect) upsSelect.value = '';
+    }
+    if (antivirusWrap) {
+        antivirusWrap.style.display = showAntivirus ? '' : 'none';
+        if (!showAntivirus && antivirusSelect) antivirusSelect.value = '';
+    }
+}
+
 // ── Event Listeners ──
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-generate-report')?.addEventListener('click', generateReport);
+
+    const typeSelect = document.getElementById('report-filter-type');
+    typeSelect?.addEventListener('change', updateReportFilterVisibility);
+
+    // Set correct initial state (type selector starts with no selection — hide both)
+    updateReportFilterVisibility();
 });

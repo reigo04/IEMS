@@ -269,6 +269,32 @@ body {
     border-color: rgba(20,184,166,0.45);
 }
 
+/* PAR Print button — amber/print theme */
+.btn-par-print {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.btn-par-print:hover {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.45);
+    transform: translateY(-1px);
+}
+
+/* PAR Download button — indigo/download theme */
+.btn-par-download {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.btn-par-download:hover {
+    background: rgba(99, 102, 241, 0.22);
+    border-color: rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
+}
+
 .btn-outline {
     background: transparent;
     color: var(--text-secondary);

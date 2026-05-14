@@ -13,74 +13,74 @@ let globalSelectActive = false; // tracks if all-in-DB are selected
 // ── Equipment Type → Condition Checklist Config ──
 const CHECKLIST_CONFIG = {
     'Desktop PC': [
-        { key: 'with_warranty',         label: 'With Warranty?' },
-        { key: 'charging_ups',          label: 'With UPS?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'charging_ups', label: 'With UPS?' },
         { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
-        { key: 'working_keyboard_mouse',label: 'Working Mouse & Keyboard?' },
-        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
-        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
-        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
-        { key: 'active_cmos_battery',   label: 'Active CMOS Battery?' },
+        { key: 'working_keyboard_mouse', label: 'Working Mouse & Keyboard?' },
+        { key: 'clear_monitor', label: 'With Clear Monitor?' },
+        { key: 'working_io_ports', label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os', label: 'Updated Operating System?' },
+        { key: 'active_cmos_battery', label: 'Active CMOS Battery?' },
     ],
     'Laptop': [
-        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
         { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
-        { key: 'working_keyboard_mouse',label: 'Working Trackpad & Keyboard?' },
-        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
-        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
-        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
-        { key: 'working_speakers',      label: 'Working Speakers?' },
+        { key: 'working_keyboard_mouse', label: 'Working Trackpad & Keyboard?' },
+        { key: 'clear_monitor', label: 'With Clear Monitor?' },
+        { key: 'working_io_ports', label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os', label: 'Updated Operating System?' },
+        { key: 'working_speakers', label: 'Working Speakers?' },
     ],
     'Tablet': [
-        { key: 'with_warranty',         label: 'With Warranty?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
         { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
-        { key: 'working_keyboard_mouse',label: 'Working Trackpad & Keyboard?' },
-        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
-        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
-        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
-        { key: 'working_speakers',      label: 'Working Speakers?' },
+        { key: 'working_keyboard_mouse', label: 'Working Trackpad & Keyboard?' },
+        { key: 'clear_monitor', label: 'With Clear Monitor?' },
+        { key: 'working_io_ports', label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os', label: 'Updated Operating System?' },
+        { key: 'working_speakers', label: 'Working Speakers?' },
     ],
     'Printer': [
-        { key: 'with_warranty',         label: 'With Warranty?' },
-        { key: 'ink_level_ok',          label: 'Ink Level Above 50% Capacity?' },
-        { key: 'printing_black',        label: 'Printing Black Color?' },
-        { key: 'printing_cyan',         label: 'Printing Cyan Color?' },
-        { key: 'printing_magenta',      label: 'Printing Magenta Color?' },
-        { key: 'printing_yellow',       label: 'Printing Yellow Color?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'ink_level_ok', label: 'Ink Level Above 50% Capacity?' },
+        { key: 'printing_black', label: 'Printing Black Color?' },
+        { key: 'printing_cyan', label: 'Printing Cyan Color?' },
+        { key: 'printing_magenta', label: 'Printing Magenta Color?' },
+        { key: 'printing_yellow', label: 'Printing Yellow Color?' },
         { key: 'working_pickup_roller', label: 'Working Pick-up Roller?' },
-        { key: 'ink_wastepad_ok',       label: 'Ink Wastepad Cleaned/Replaced?' },
+        { key: 'ink_wastepad_ok', label: 'Ink Wastepad Cleaned/Replaced?' },
     ],
     'Document Scanner': [
-        { key: 'with_warranty',             label: 'With Warranty?' },
-        { key: 'working_adf',               label: 'Working ADF?' },
-        { key: 'working_buttons',           label: 'Working Buttons?' },
-        { key: 'working_pickup_roller',     label: 'Working Pick-up Roller?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'working_adf', label: 'Working ADF?' },
+        { key: 'working_buttons', label: 'Working Buttons?' },
+        { key: 'working_pickup_roller', label: 'Working Pick-up Roller?' },
         { key: 'working_separation_roller', label: 'Working Separation Roller?' },
     ],
     'LCD Projector': [
-        { key: 'with_warranty',    label: 'With Warranty?' },
-        { key: 'laser_source',     label: 'Laser Source?' },
-        { key: 'bulb_source',      label: 'Bulb Source?' },
-        { key: 'working_buttons',  label: 'Working Buttons & I/O Ports?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'laser_source', label: 'Laser Source?' },
+        { key: 'bulb_source', label: 'Bulb Source?' },
+        { key: 'working_buttons', label: 'Working Buttons & I/O Ports?' },
         { key: 'clear_projection', label: 'With Clear Projection/Output?' },
     ],
     'Monitor': [
-        { key: 'with_warranty',         label: 'With Warranty?' },
-        { key: 'charging_ups',          label: 'With UPS?' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'charging_ups', label: 'With UPS?' },
         { key: 'weekly_scan_antivirus', label: 'Antivirus Installed?' },
-        { key: 'working_keyboard_mouse',label: 'Working Mouse & Keyboard?' },
-        { key: 'clear_monitor',         label: 'With Clear Monitor?' },
-        { key: 'working_io_ports',      label: 'Working I/O Ports?' },
-        { key: 'updated_patched_os',    label: 'Updated Operating System?' },
-        { key: 'active_cmos_battery',   label: 'Active CMOS Battery?' },
+        { key: 'working_keyboard_mouse', label: 'Working Mouse & Keyboard?' },
+        { key: 'clear_monitor', label: 'With Clear Monitor?' },
+        { key: 'working_io_ports', label: 'Working I/O Ports?' },
+        { key: 'updated_patched_os', label: 'Updated Operating System?' },
+        { key: 'active_cmos_battery', label: 'Active CMOS Battery?' },
     ],
     'Other ICT Supplies': [
-        { key: 'with_warranty',           label: 'With Warranty?' },
-        { key: 'working_buttons',         label: 'Working Buttons?' },
-        { key: 'working_io_ports',        label: 'I/O Connections?' },
-        { key: 'clear_monitor',           label: 'Clear Monitor? (Selected Equipment)' },
+        { key: 'with_warranty', label: 'With Warranty?' },
+        { key: 'working_buttons', label: 'Working Buttons?' },
+        { key: 'working_io_ports', label: 'I/O Connections?' },
+        { key: 'clear_monitor', label: 'Clear Monitor? (Selected Equipment)' },
         { key: 'good_physical_condition', label: 'Good Physical Condition?' },
-        { key: 'functional_for_use',      label: 'Functional For Use?' },
+        { key: 'functional_for_use', label: 'Functional For Use?' },
     ],
 };
 
@@ -133,6 +133,7 @@ async function loadEquipment(page = 1) {
     const acquisition_date = document.getElementById('filter-acquisition-date')?.value || '';
     const inventory_date = document.getElementById('filter-inventory-date')?.value || '';
     const cost = document.getElementById('filter-cost')?.value || '';
+    const cost_mode = document.getElementById('filter-cost-mode')?.value || 'min';
     const description = document.getElementById('filter-description')?.value || '';
     const warranty = document.getElementById('filter-warranty')?.value || '';
     const ups = document.getElementById('filter-ups')?.value || '';
@@ -142,7 +143,7 @@ async function loadEquipment(page = 1) {
         page, per_page: 25, search, type, location, status,
         indicator, procurement_title, supplier, brand, model,
         property_number, serial_number, person_accountable, used_by,
-        position, acquisition_date, inventory_date, cost, description,
+        position, acquisition_date, inventory_date, cost, cost_mode, description,
         warranty, ups, antivirus
     });
 
@@ -194,7 +195,7 @@ function renderEquipmentTable(data) {
             <td>${item.property_number || '-'}</td>
             <td style="font-family:monospace; font-size:0.8rem;">${item.serial_number}</td>
             <td>${item.acquisition_date || '-'}</td>
-            <td>${item.cost ? '₱' + item.cost.toLocaleString() : '-'}</td>
+            <td>${item.cost ? '\u20b1' + item.cost.toLocaleString() : '-'}</td>
             <td>${item.person_accountable}</td>
             <td>${item.used_by || '-'}</td>
             <td><span class="badge ${item.with_warranty ? 'badge-yes' : 'badge-no'}">${item.with_warranty ? 'Yes' : 'No'}</span></td>
@@ -202,6 +203,10 @@ function renderEquipmentTable(data) {
                 <div class="action-btns">
                     <button onclick="viewEquipment(${item.id})" title="View" class="view-btn">👁️</button>
                     <button onclick="editEquipment(${item.id})" title="Edit">✏️</button>
+                    ${(item.cost || 0) >= 50000 ? `
+                    <button onclick="printSinglePAR(${item.id})" title="Print PAR" class="btn-par-print" style="padding:4px 7px;font-size:0.8rem;border-radius:6px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.12);color:#f59e0b;cursor:pointer;">🖨️</button>
+                    <button onclick="downloadSinglePAR(${item.id})" title="Download PAR" class="btn-par-download" style="padding:4px 7px;font-size:0.8rem;border-radius:6px;border:1px solid rgba(99,102,241,0.35);background:rgba(99,102,241,0.12);color:#818cf8;cursor:pointer;">📄</button>
+                    ` : ''}
                     <button class="delete-btn" onclick="confirmDeleteSingle(${item.id})" title="Delete">🗑️</button>
                 </div>
             </td>
@@ -319,7 +324,7 @@ async function loadFilterOptions() {
 
         populateDatalist('list-types', data.types);
         populateDatalist('list-locations', data.locations);
-        
+
         // Advanced filters
         populateDatalist('list-indicators', data.indicators);
         populateDatalist('list-titles', data.procurement_titles);
@@ -492,6 +497,13 @@ async function saveEquipment() {
 
         if (res.ok) {
             showToast(editingId ? 'Equipment updated successfully' : 'Equipment added successfully', 'success');
+            // Auto-PAR notification for newly added equipment only
+            if (!editingId) {
+                const newItem = await res.json();
+                if (typeof parShowAutoNotification === 'function') {
+                    parShowAutoNotification([newItem]);
+                }
+            }
             closeModal();
             loadEquipment(currentPage);
             loadOverview();
@@ -635,6 +647,13 @@ function renderViewModal(item) {
     const body = document.getElementById('view-modal-body');
     document.getElementById('view-modal-title').textContent = `📋 ${item.procurement_title || 'Equipment Details'}`;
 
+    // Show/hide PAR buttons based on eligibility
+    const parPrintBtn = document.getElementById('view-modal-print-par-btn');
+    const parDownloadBtn = document.getElementById('view-modal-download-par-btn');
+    const qualifies = (parseFloat(item.cost) || 0) >= 50000;
+    if (parPrintBtn) parPrintBtn.style.display = qualifies ? '' : 'none';
+    if (parDownloadBtn) parDownloadBtn.style.display = qualifies ? '' : 'none';
+
     const boolBadge = (val) => val
         ? '<span class="badge badge-serviceable">✅ Yes</span>'
         : '<span class="badge badge-unserviceable">❌ No</span>';
@@ -699,8 +718,8 @@ function renderViewModal(item) {
                 <div class="view-section-title">✅ Condition Checklist</div>
                 <div class="view-checklist">
                     ${getChecklistItems(item.type_of_equipment).map(c =>
-                        `<div class="view-check-item"><span>${c.label}</span>${boolBadge(item[c.key])}</div>`
-                    ).join('')}
+        `<div class="view-check-item"><span>${c.label}</span>${boolBadge(item[c.key])}</div>`
+    ).join('')}
                 </div>
             </div>
 
@@ -797,11 +816,11 @@ async function openTransferModal(id) {
         document.getElementById('transfer-from-loc').value = item.location || '';
 
         // Clear To fields
-        ['transfer-to-pa','transfer-to-pa-pos','transfer-to-ub','transfer-to-ub-pos','transfer-to-loc',
-         'transfer-reason','transfer-notes'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
+        ['transfer-to-pa', 'transfer-to-pa-pos', 'transfer-to-ub', 'transfer-to-ub-pos', 'transfer-to-loc',
+            'transfer-reason', 'transfer-notes'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
         // Default date to today
         document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
 
@@ -821,9 +840,9 @@ async function saveTransfer() {
     const transfer_date = document.getElementById('transfer-date').value;
     const reason = document.getElementById('transfer-reason').value.trim();
 
-    if (!to_pa)   { showToast('New person accountable is required', 'error'); return; }
+    if (!to_pa) { showToast('New person accountable is required', 'error'); return; }
     if (!transfer_date) { showToast('Transfer date is required', 'error'); return; }
-    if (!reason)  { showToast('Reason is required', 'error'); return; }
+    if (!reason) { showToast('Reason is required', 'error'); return; }
 
     const btn = document.getElementById('transfer-save-btn');
     btn.disabled = true;
@@ -864,8 +883,8 @@ async function saveTransfer() {
 function openBulkTransferModal() {
     if (selectedIds.size === 0) return;
     document.getElementById('bulk-transfer-count').textContent = selectedIds.size;
-    ['bulk-transfer-to-pa','bulk-transfer-to-pa-pos','bulk-transfer-to-ub',
-     'bulk-transfer-to-ub-pos','bulk-transfer-to-loc','bulk-transfer-reason','bulk-transfer-notes']
+    ['bulk-transfer-to-pa', 'bulk-transfer-to-pa-pos', 'bulk-transfer-to-ub',
+        'bulk-transfer-to-ub-pos', 'bulk-transfer-to-loc', 'bulk-transfer-reason', 'bulk-transfer-notes']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('bulk-transfer-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('bulk-transfer-modal').classList.add('active');
@@ -880,9 +899,9 @@ async function saveBulkTransfer() {
     const transfer_date = document.getElementById('bulk-transfer-date').value;
     const reason = document.getElementById('bulk-transfer-reason').value.trim();
 
-    if (!to_pa)         { showToast('New person accountable is required', 'error'); return; }
+    if (!to_pa) { showToast('New person accountable is required', 'error'); return; }
     if (!transfer_date) { showToast('Transfer date is required', 'error'); return; }
-    if (!reason)        { showToast('Reason is required', 'error'); return; }
+    if (!reason) { showToast('Reason is required', 'error'); return; }
 
     const btn = document.getElementById('bulk-transfer-save-btn');
     btn.disabled = true;
@@ -1047,8 +1066,8 @@ function closeImportModal() {
 
 function handleImportFile(file) {
     if (!file) return;
-    if (!file.name.match(/\.xlsx?$/i)) {
-        showToast('Please upload an Excel file (.xlsx)', 'error');
+    if (!file.name.match(/\.(xlsx?|csv)$/i)) {
+        showToast('Please upload an Excel (.xlsx) or CSV (.csv) file', 'error');
         return;
     }
     importFile = file;
@@ -1073,6 +1092,10 @@ async function uploadImport() {
 
         if (res.ok) {
             showToast(data.message, 'success');
+            // Auto-PAR notification for imported items
+            if (typeof parShowAutoNotification === 'function' && data.items) {
+                parShowAutoNotification(data.items);
+            }
             closeImportModal();
             loadEquipment(1);
             loadOverview();
@@ -1292,6 +1315,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-reset-filters')?.addEventListener('click', () => {
         const inputs = panelFilters.querySelectorAll('select, input');
         inputs.forEach(input => input.value = '');
+        if (document.getElementById('filter-cost-mode')) {
+            document.getElementById('filter-cost-mode').value = 'min';
+        }
         loadEquipment(1);
     });
 });

@@ -11,6 +11,8 @@
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -255,8 +257,15 @@
                             <input type="date" class="form-input" id="filter-inventory-date">
                         </div>
                         <div class="filter-group">
-                            <label for="filter-cost">Cost (Exact)</label>
-                            <input type="number" class="form-input" id="filter-cost" placeholder="0.00" step="0.01">
+                            <label for="filter-cost">Cost Filter</label>
+                            <div style="display:flex; gap:5px;">
+                                <select class="filter-select" id="filter-cost-mode" style="width:90px; flex-shrink:0;">
+                                    <option value="min">Min (≥)</option>
+                                    <option value="max">Max (≤)</option>
+                                    <option value="exact">Exact (=)</option>
+                                </select>
+                                <input type="number" class="form-input" id="filter-cost" placeholder="₱ Amount" step="0.01" min="0">
+                            </div>
                         </div>
                         <div class="filter-group">
                             <label for="filter-description">Description</label>
@@ -297,6 +306,8 @@
                 <div class="bulk-bar" id="bulk-bar">
                     <span class="bulk-count" id="bulk-count">0 selected</span>
                     <button class="btn btn-accent btn-sm" id="btn-bulk-transfer">🔄 Transfer Selected</button>
+                    <button class="btn btn-par-print btn-sm" id="btn-bulk-print-par">🖨️ Print PAR</button>
+                    <button class="btn btn-par-download btn-sm" id="btn-bulk-download-par">📄 Download PAR</button>
                     <button class="btn btn-danger btn-sm" id="btn-bulk-delete">🗑️ Delete Selected</button>
                     <button class="btn btn-outline btn-sm" id="btn-clear-selection">✕ Clear Selection</button>
                 </div>
@@ -422,7 +433,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="mb-2">
+                        <div id="report-filter-ups-wrap" class="mb-2">
                             <div class="form-group-inline">
                                 <label>UPS</label>
                                 <select class="filter-select" id="report-filter-ups" style="width:100%;">
@@ -432,7 +443,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="mb-2">
+                        <div id="report-filter-antivirus-wrap" class="mb-2">
                             <div class="form-group-inline">
                                 <label>Antivirus Installed</label>
                                 <select class="filter-select" id="report-filter-antivirus" style="width:100%;">
@@ -691,6 +702,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="view-modal-close-footer">Close</button>
+                <button class="btn btn-par-print" id="view-modal-print-par-btn" style="display:none;">🖨️ Print PAR</button>
+                <button class="btn btn-par-download" id="view-modal-download-par-btn" style="display:none;">📄 Download PAR</button>
                 <button class="btn btn-accent" id="view-modal-transfer-btn">🔄 Transfer</button>
                 <button class="btn btn-primary" id="view-modal-edit-btn">✏️ Edit Equipment</button>
             </div>
@@ -707,9 +720,9 @@
             <div class="modal-body">
                 <div class="drop-zone" id="drop-zone">
                     <div class="drop-icon">📂</div>
-                    <h4>Drag & drop your Excel file here</h4>
-                    <p>or click to browse — supports .xlsx files</p>
-                    <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;">
+                    <h4>Drag & drop your Inventory file here</h4>
+                    <p>or click to browse — supports .xlsx, .csv files</p>
+                    <input type="file" id="import-file" accept=".xlsx,.xls,.csv" style="display:none;">
                 </div>
                 <div id="import-file-info" style="margin-top:16px; display:none;">
                     <div class="d-flex items-center gap-1"
@@ -956,6 +969,7 @@
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/equipment.js"></script>
     <script src="/static/js/reports.js"></script>
+    <script src="/static/js/par.js"></script>
 </body>
 
 </html>
